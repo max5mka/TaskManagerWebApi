@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TaskManagerWebApi.Models.DTOs;
 using TaskManagerWebApi.Models.Services;
 
 namespace TaskManagerWebApi.Controllers
@@ -8,21 +9,22 @@ namespace TaskManagerWebApi.Controllers
     public class WorkItemController(IWorkItemService _workItemService) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync(
-            [FromQuery] string? status = null,
-            [FromQuery] string? priority = null,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllAsync([FromQuery] WorkItemFilterDTO filter)
         {
-            var list = await _workItemService.GetAllAsync(status, priority, page, pageSize);
-            return Ok(list);
+            var foundList = await _workItemService.GetAllAsync(filter);
+            return Ok(foundList);
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetByIdASync([FromRoute] int id)
         {
-            var result = await _workItemService.GetByIdAsync(id);
-            return Ok(result);
+            var found = await _workItemService.GetByIdAsync(id);
+            if (found == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(found);
         }
     }
 }

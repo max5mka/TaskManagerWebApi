@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagerWebApi.Models;
-using TaskManagerWebApi.Models.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 

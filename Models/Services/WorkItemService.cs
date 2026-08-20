@@ -1,30 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TaskManagerWebApi.Models.Repositories;
+using TaskManagerWebApi.Models.DTOs;
+using TaskManagerWebApi.Models.Entities;
 
 namespace TaskManagerWebApi.Models.Services
 {
-    public class WorkItemService(IWorkItemRepository _workItemRepository) : IWorkItemService
+    public class WorkItemService(ApplicationDbContext _context) : IWorkItemService
     {
-        public async Task<IEnumerable<WorkItem>> GetAllAsync(string? status, string? priority, int page, int pageSize)
+        public async Task<IEnumerable<WorkItem>> GetAllAsync(WorkItemFilterDTO filter)
         {            
-            var query = _workItemRepository.GetAll()
-                .Where(x => status == null || x.Status == status)
-                .Where(x => priority == null || x.Priority == priority)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize);
+            var query = _context.WorkItems
+                .Where(x => filter.Status == null || x.Status == filter.Status)
+                .Where(x => filter.Priority == null || x.Priority == filter.Priority)
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize);
 
             return await query.ToListAsync();
         }
 
         public async Task<WorkItem?> GetByIdAsync(int id)
         {
-            var workItem = await _workItemRepository.GetByIdAsync(id);
-            if (workItem == null)
-            {
-                throw new Exception($"Task not found with Id={id}");
-            }
-
-            return workItem;
+            return await _context.WorkItems.FirstOrDefaultAsync(x => x.Id == id);
         }
     }
 }

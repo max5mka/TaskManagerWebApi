@@ -1,4 +1,4 @@
-﻿namespace TaskManagerWebApi.Models
+﻿namespace TaskManagerWebApi.Models.Entities
 {
     public class WorkItem
     {
