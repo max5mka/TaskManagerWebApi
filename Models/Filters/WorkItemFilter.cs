@@ -1,6 +1,6 @@
-﻿namespace TaskManagerWebApi.Models.DTOs
+﻿namespace TaskManagerWebApi.Models.Filters
 {
-    public class WorkItemFilterDTO
+    public class WorkItemFilter
     {
         public string? Status { get; set; } = null;
         public string? Priority { get; set; } = null;

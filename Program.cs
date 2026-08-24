@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskManagerWebApi.Middleware;
 using TaskManagerWebApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

@@ -1,12 +1,16 @@
-﻿using TaskManagerWebApi.Models.DTOs;
-using TaskManagerWebApi.Models.Entities;
-using static System.Net.WebRequestMethods;
+﻿using TaskManagerWebApi.Models.Entities;
+using TaskManagerWebApi.Models.Filters;
+using TaskManagerWebApi.Models.Requests;
+using TaskManagerWebApi.Models.Response;
 
 namespace TaskManagerWebApi.Models.Services
 {
     public interface IWorkItemService
     {
-        Task<IEnumerable<WorkItem>> GetAllAsync(WorkItemFilterDTO filter);
-        Task<WorkItem?> GetByIdAsync(int id);
+        Task<IEnumerable<WorkItemResponse>> GetAllAsync(WorkItemFilter filter, CancellationToken cancellationToken = default);
+        Task<WorkItemResponse> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<WorkItemResponse> CreateAsync(CreateWorkItemRequest request, CancellationToken token = default);
+        Task UpdateAsync(int id, UpdateWorkItemRequest request, CancellationToken token = default);
+        Task DeleteAsync(int id, CancellationToken cancellationToken = default);
     }
 }
