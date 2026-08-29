@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString),
+    ServiceLifetime.Scoped);
 builder.Services.AddData();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
@@ -17,6 +18,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseDeveloperExceptionPage();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskManagerWebApi.Models.Services;
+using TaskManagerWebApi.Models.Services.Interfaces;
 
 namespace TaskManagerWebApi.Models
 {
@@ -8,6 +9,7 @@ namespace TaskManagerWebApi.Models
         public static IServiceCollection AddData(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddScoped<IWorkItemService, WorkItemService>();
+            serviceCollection.AddScoped<IProjectService, ProjectService>();
             return serviceCollection;
         }
     }
