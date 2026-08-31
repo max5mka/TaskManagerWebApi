@@ -4,6 +4,7 @@ using TaskManagerWebApi.Models.Entities;
 using TaskManagerWebApi.Models.Filters;
 using TaskManagerWebApi.Models.Requests;
 using TaskManagerWebApi.Models.Response;
+using TaskManagerWebApi.Models.Services.Interfaces;
 
 namespace TaskManagerWebApi.Models.Services
 {
@@ -16,7 +17,7 @@ namespace TaskManagerWebApi.Models.Services
                 Title = entity.Title,
                 Description = entity.Description,
                 Status = entity.Status,
-                Deadline = entity.Deadline,
+                NumberOfHours = entity.NumberOfHours,
             };
 
 
@@ -50,7 +51,7 @@ namespace TaskManagerWebApi.Models.Services
                 Title = request.Title,
                 Description = request.Description,
                 Status = "New",
-                Deadline = request.Deadline,
+                NumberOfHours = request.NumberOfHours,
             };
 
             await _context.Projects.AddAsync(entity, cancellationToken);
@@ -66,7 +67,7 @@ namespace TaskManagerWebApi.Models.Services
             found.Title = request.Title;
             found.Description = request.Description;
             found.Status = request.Status;
-            found.Deadline = request.Deadline;
+            found.NumberOfHours = request.NumberOfHours;
 
             await _context.SaveChangesAsync(cancellationToken);
             return ToResponse(found);

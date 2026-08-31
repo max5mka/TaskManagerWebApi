@@ -3,7 +3,7 @@ using TaskManagerWebApi.Models;
 using TaskManagerWebApi.Models.Filters;
 using TaskManagerWebApi.Models.Requests;
 using TaskManagerWebApi.Models.Response;
-using TaskManagerWebApi.Models.Services;
+using TaskManagerWebApi.Models.Services.Interfaces;
 
 namespace TaskManagerWebApi.Controllers
 {

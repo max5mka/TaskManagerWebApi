@@ -6,26 +6,26 @@ using TaskManagerWebApi.Models.Services.Interfaces;
 namespace TaskManagerWebApi.Controllers
 {
     [ApiController]
-    [Route("api/Projects/{projectId:int}/WorkItems")]
-    public class WorkItemController(IWorkItemService _workItemService) : ControllerBase
+    [Route("api/Projects/{projectId:int}/Tasks")]
+    public class TaskController(ITaskService _taskService) : ControllerBase
     {
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(
             [FromRoute] int projectId,
-            [FromQuery] WorkItemFilter filter)
+            [FromQuery] TaskFilter filter)
         {
-            var foundList = await _workItemService.GetAllAsync(projectId, filter);
+            var foundList = await _taskService.GetAllAsync(projectId, filter);
             return Ok(foundList);
         }
 
 
-        [HttpGet("{workItemId:int}")]
+        [HttpGet("{taskId:int}")]
         [ActionName(nameof(GetByIdAsync))]
         public async Task<IActionResult> GetByIdAsync(
             [FromRoute] int projectId, 
-            [FromRoute] int workItemId)
+            [FromRoute] int taskId)
         {
-            var found = await _workItemService.GetByIdAsync(projectId, workItemId);
+            var found = await _taskService.GetByIdAsync(projectId, taskId);
             return Ok(found);
         }
 
@@ -33,35 +33,35 @@ namespace TaskManagerWebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAsync(
             [FromRoute] int projectId, 
-            [FromBody] CreateWorkItemRequest request)
+            [FromBody] CreateTaskRequest request)
         {
-            var created = await _workItemService.CreateAsync(projectId, request);
+            var created = await _taskService.CreateAsync(projectId, request);
 
             return CreatedAtAction(
                 nameof(GetByIdAsync),
-                new { projectId, created.Id },
+                new { projectId, taskId = created.Id },
                 created
             );
         }
 
 
-        [HttpPut("{workItemId:int}")]
+        [HttpPut("{taskId:int}")]
         public async Task<IActionResult> UpdateAsync(
             [FromRoute] int projectId,
-            [FromRoute] int workItemId,
-            [FromBody] UpdateWorkItemRequest request)
+            [FromRoute] int taskId,
+            [FromBody] UpdateTaskRequest request)
         {
-            var updated = await _workItemService.UpdateAsync(projectId, workItemId, request);
+            var updated = await _taskService.UpdateAsync(projectId, taskId, request);
             return Ok(updated);
         }
 
 
-        [HttpDelete("{workItemId:int}")]
+        [HttpDelete("{taskId:int}")]
         public async Task<IActionResult> DeleteAsync(
             [FromRoute] int projectId,
-            [FromRoute] int workItemId)
+            [FromRoute] int taskId)
         {
-            await _workItemService.DeleteAsync(projectId, workItemId);
+            await _taskService.DeleteAsync(projectId, taskId);
             return NoContent();
         }
     }

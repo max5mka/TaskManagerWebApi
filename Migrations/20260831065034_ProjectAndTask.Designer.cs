@@ -12,8 +12,8 @@ using TaskManagerWebApi.Models;
 namespace TaskManagerWebApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260827122956_WorkItemProjectOneToMany")]
-    partial class WorkItemProjectOneToMany
+    [Migration("20260831065034_ProjectAndTask")]
+    partial class ProjectAndTask
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,12 +33,15 @@ namespace TaskManagerWebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("Deadline")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfHours")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -48,12 +51,15 @@ namespace TaskManagerWebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("TaskManagerWebApi.Models.Entities.WorkItemEntity", b =>
+            modelBuilder.Entity("TaskManagerWebApi.Models.Entities.TaskEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -61,9 +67,15 @@ namespace TaskManagerWebApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfHours")
+                        .HasColumnType("int");
 
                     b.Property<string>("Priority")
                         .IsRequired()
@@ -80,17 +92,20 @@ namespace TaskManagerWebApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("WorkItems");
+                    b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("TaskManagerWebApi.Models.Entities.WorkItemEntity", b =>
+            modelBuilder.Entity("TaskManagerWebApi.Models.Entities.TaskEntity", b =>
                 {
                     b.HasOne("TaskManagerWebApi.Models.Entities.ProjectEntity", "Project")
-                        .WithMany("WorkItems")
+                        .WithMany("Tasks")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -100,7 +115,7 @@ namespace TaskManagerWebApi.Migrations
 
             modelBuilder.Entity("TaskManagerWebApi.Models.Entities.ProjectEntity", b =>
                 {
-                    b.Navigation("WorkItems");
+                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

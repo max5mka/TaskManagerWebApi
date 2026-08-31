@@ -5,14 +5,14 @@ namespace TaskManagerWebApi.Models
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public DbSet<WorkItemEntity> WorkItems { get; set; }
+        public DbSet<TaskEntity> Tasks { get; set; }
         public DbSet<ProjectEntity> Projects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<WorkItemEntity>()
+            modelBuilder.Entity<TaskEntity>()
                 .HasOne(w => w.Project)
-                .WithMany(p => p.WorkItems)
+                .WithMany(p => p.Tasks)
                 .HasForeignKey(w => w.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

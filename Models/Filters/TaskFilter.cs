@@ -1,6 +1,6 @@
 ﻿namespace TaskManagerWebApi.Models.Filters
 {
-    public class WorkItemFilter
+    public class TaskFilter
     {
         public string? Status { get; set; } = null;
         public string? Priority { get; set; } = null;

@@ -8,7 +8,7 @@ namespace TaskManagerWebApi.Models
     {
         public static IServiceCollection AddData(this IServiceCollection serviceCollection)
         {
-            serviceCollection.AddScoped<IWorkItemService, WorkItemService>();
+            serviceCollection.AddScoped<ITaskService, TaskService>();
             serviceCollection.AddScoped<IProjectService, ProjectService>();
             return serviceCollection;
         }

@@ -2,7 +2,7 @@
 using TaskManagerWebApi.Models.Requests;
 using TaskManagerWebApi.Models.Response;
 
-namespace TaskManagerWebApi.Models.Services
+namespace TaskManagerWebApi.Models.Services.Interfaces
 {
     public interface IProjectService
     {
