@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagerWebApi.Middleware;
 using TaskManagerWebApi.Models;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString),
     ServiceLifetime.Scoped);
 builder.Services.AddData();
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 

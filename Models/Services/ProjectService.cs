@@ -11,19 +11,23 @@ namespace TaskManagerWebApi.Models.Services
     public class ProjectService(ApplicationDbContext _context) : IProjectService
     {
         private ProjectResponse ToResponse(ProjectEntity entity) =>
-            new ProjectResponse
+            new()
             {
                 Id = entity.Id,
                 Title = entity.Title,
                 Description = entity.Description,
                 Status = entity.Status,
-                NumberOfHours = entity.NumberOfHours,
+                Start = entity.Start,
+                DeadLine = entity.Deadline,
+                TotalHours = entity.TotalHours,
+                HoursSpent = entity.HoursSpent,
             };
 
 
         public async Task<IEnumerable<ProjectResponse>> GetAllAsync(ProjectFilter filter, CancellationToken cancellationToken = default)
         {
             var query = _context.Projects
+                .Include(p => p.Tasks)
                 .Where(x => filter.Status == null || x.Status == filter.Status)
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize);
@@ -51,7 +55,8 @@ namespace TaskManagerWebApi.Models.Services
                 Title = request.Title,
                 Description = request.Description,
                 Status = "New",
-                NumberOfHours = request.NumberOfHours,
+                Start = request.Start,
+                Deadline = request.Deadline,
             };
 
             await _context.Projects.AddAsync(entity, cancellationToken);
@@ -67,7 +72,8 @@ namespace TaskManagerWebApi.Models.Services
             found.Title = request.Title;
             found.Description = request.Description;
             found.Status = request.Status;
-            found.NumberOfHours = request.NumberOfHours;
+            found.Start = request.Start;
+            found.Deadline = request.Deadline;
 
             await _context.SaveChangesAsync(cancellationToken);
             return ToResponse(found);

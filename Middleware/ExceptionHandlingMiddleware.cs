@@ -27,9 +27,16 @@ namespace TaskManagerWebApi.Middleware
             }
             catch (Exception ex)
             {
-                Console.WriteLine("2ND CATCH INSIDE");
+                /*Console.WriteLine("2ND CATCH INSIDE");
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });*/
+
+                Console.WriteLine("2ND CATCH INSIDE");
+                Console.WriteLine($"Ошибка: {ex.GetType().Name} - {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }
         }
     }

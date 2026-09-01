@@ -21,7 +21,7 @@ namespace TaskManagerWebApi.Models.Services
                 Description = entity.Description,
                 Status = entity.Status,
                 Priority = entity.Priority,
-                NumberOfHours = entity.NumberOfHours,
+                Hours = entity.Hours,
             };
 
 
@@ -71,7 +71,7 @@ namespace TaskManagerWebApi.Models.Services
                 Description = request.Description,
                 Status = "New",
                 Priority = request.Priority,
-                NumberOfHours = request.NumberOfHours,
+                Hours = request.Hours,
                 ProjectId = projectId
             };
 
@@ -92,6 +92,7 @@ namespace TaskManagerWebApi.Models.Services
             found.Description = request.Description;
             found.Status = request.Status;
             found.Priority = request.Priority;
+            found.Hours = request.Hours;
 
             await _context.SaveChangesAsync(cancellationToken);
             return ToResponse(found);

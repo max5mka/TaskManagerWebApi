@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using TaskManagerWebApi.Models;
 using TaskManagerWebApi.Models.Filters;
 using TaskManagerWebApi.Models.Requests;
@@ -29,8 +30,16 @@ namespace TaskManagerWebApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateAsync([FromBody]CreateProjectRequest request)
+        public async Task<IActionResult> CreateAsync(
+            [FromBody] CreateProjectRequest request,
+            [FromServices] IValidator<CreateProjectRequest> validator)
         {
+            var validationResult = await validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+            }
+
             var created = await _service.CreateAsync(request);
 
             return CreatedAtAction(
@@ -42,8 +51,17 @@ namespace TaskManagerWebApi.Controllers
 
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateAsync([FromRoute]int id, [FromBody]UpdateProjectRequest request)
+        public async Task<IActionResult> UpdateAsync(
+            [FromRoute] int id, 
+            [FromBody] UpdateProjectRequest request,
+            [FromServices] IValidator<UpdateProjectRequest> validator)
         {
+            var validationResult = await validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+            }
+
             var updated = await _service.UpdateAsync(id, request);
             return Ok(updated);
         }
