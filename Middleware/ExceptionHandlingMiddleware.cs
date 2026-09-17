@@ -1,4 +1,5 @@
-﻿using TaskManagerWebApi.Exceptions;
+﻿using System.Security.Authentication;
+using TaskManagerWebApi.Exceptions;
 
 namespace TaskManagerWebApi.Middleware
 {
@@ -25,13 +26,21 @@ namespace TaskManagerWebApi.Middleware
                 context.Response.StatusCode = 404;
                 await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }
+            catch (UserAlreadyExistsException ex)
+            {
+                Console.WriteLine("2ND CATCH INSIDE");
+                context.Response.StatusCode = 409;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
+            catch (InvalidCredentialException ex)
+            {
+                Console.WriteLine("3RD CATCH INSIDE");
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                /*Console.WriteLine("2ND CATCH INSIDE");
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });*/
-
-                Console.WriteLine("2ND CATCH INSIDE");
+                Console.WriteLine("4TH CATCH INSIDE");
                 Console.WriteLine($"Ошибка: {ex.GetType().Name} - {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
 

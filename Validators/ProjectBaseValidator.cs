@@ -4,9 +4,9 @@ using TaskManagerWebApi.Models.Requests;
 
 namespace TaskManagerWebApi.Validators
 {
-    public class ProjectRequestBaseValidator<T> : AbstractValidator<T> where T : ProjectRequestBase
+    public class ProjectBaseValidator<T> : AbstractValidator<T> where T : ProjectBaseRequest
     {
-        protected ProjectRequestBaseValidator()
+        protected ProjectBaseValidator()
         {
             int titleLen = 200;
             RuleFor(x => x.Title)
@@ -18,10 +18,12 @@ namespace TaskManagerWebApi.Validators
                 .NotEmpty().WithMessage("Description is required")
                 .MaximumLength(descrLen).WithMessage($"Description may not exceed {descrLen} characters");
 
+            int maxStartDays = 30;
             RuleFor(x => x.Start)
                 .NotEmpty().WithMessage("Start date is required")
-                .GreaterThan(DateTime.Now).WithMessage("Deadline cannot be in the past")
-                .LessThan(x => x.Deadline).WithMessage("Start time cannot be less than deadline");
+                .GreaterThan(DateTime.Now).WithMessage("Start time cannot be in the past")
+                .LessThan(x => x.Deadline).WithMessage("Start time cannot be later than deadline")
+                .LessThan(x => DateTime.Now.AddDays(maxStartDays)).WithMessage($"Start time may not be later than {maxStartDays} days");
 
             int maxYears = 10;
             RuleFor(x => x.Deadline)

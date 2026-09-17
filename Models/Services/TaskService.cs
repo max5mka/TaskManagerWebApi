@@ -1,8 +1,10 @@
-﻿using Azure.Core;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Exceptions;
+using TaskManagerWebApi.Models.Constants;
 using TaskManagerWebApi.Models.Entities;
 using TaskManagerWebApi.Models.Filters;
+using TaskManagerWebApi.Models.Mappers;
 using TaskManagerWebApi.Models.Requests;
 using TaskManagerWebApi.Models.Response;
 using TaskManagerWebApi.Models.Services.Interfaces;
@@ -11,28 +13,21 @@ namespace TaskManagerWebApi.Models.Services
 {
     public class TaskService(
         ApplicationDbContext _context,
+        IUserService _userService,
         IProjectService _projectService) : ITaskService
     {
-        private TaskResponse ToResponse(TaskEntity entity) =>
-            new TaskResponse
-            {
-                Id = entity.Id,
-                Title = entity.Title,
-                Description = entity.Description,
-                Status = entity.Status,
-                Priority = entity.Priority,
-                Hours = entity.Hours,
-            };
-
-
-        public async Task<IEnumerable<TaskResponse>> GetAllAsync(
+        public async Task<IEnumerable<TaskShortResponse>> GetAllAsync(
+            int userId,
             int projectId,
             TaskFilter filter, 
             CancellationToken cancellationToken = default)
         {
-            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
+            await _userService.EnsureUserExistsAsync(userId);
+            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
 
             var query = _context.Tasks
+                .Include(x => x.Creator)
+                .Include(x => x.Assignee)
                 .Where(x => x.ProjectId == projectId)
                 .Where(x => filter.Status == null || x.Status == filter.Status)
                 .Where(x => filter.Priority == null || x.Priority == filter.Priority)
@@ -40,85 +35,102 @@ namespace TaskManagerWebApi.Models.Services
                 .Take(filter.PageSize);
 
             var entities = await query.ToListAsync(cancellationToken);
-
-            var responseList = new List<TaskResponse>();
-            entities.ForEach(x => responseList.Add(ToResponse(x)));
-
-            return responseList;
+            return TaskMapper.ToShortResponses(entities);
         }
 
 
-        public async Task<TaskResponse> GetByIdAsync(
+        public async Task<TaskLongResponse> GetByIdAsync(
+            int userId,
             int projectId,
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityById(projectId, taskId, cancellationToken);
-            return ToResponse(found);
+            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
+            return TaskMapper.ToLongResponse(found);
         }
 
 
-        public async Task<TaskResponse> CreateAsync(
+        public async Task<TaskCreateResponse> CreateAsync(
+            int userId,
             int projectId, 
-            CreateTaskRequest request, 
+            TaskCreateRequest request, 
             CancellationToken cancellationToken = default)
         {
-            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
+            await _userService.EnsureUserExistsAsync(userId);
+            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
 
-            var entity = new TaskEntity
-            {
-                Title = request.Title,
-                Description = request.Description,
-                Status = "New",
-                Priority = request.Priority,
-                Hours = request.Hours,
-                ProjectId = projectId
-            };
+            var entity = TaskMapper.ToEntity(userId, projectId, request);
 
-            var add = await _context.Tasks.AddAsync(entity, cancellationToken);
-            var save = await _context.SaveChangesAsync(cancellationToken);
-            return ToResponse(entity);
+            await _context.Tasks.AddAsync(entity, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            return TaskMapper.ToCreateResponse(entity);
         }
 
 
-        public async Task<TaskResponse> UpdateAsync(
+        public async Task<TaskLongResponse> UpdateAsync(
+            int userId,
             int projectId,
             int taskId, 
-            UpdateTaskRequest request, 
+            TaskUpdateRequest request, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityById(projectId, taskId, cancellationToken);
+            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
+
+            if (!string.Equals(found.Title, request.Title)
+                || !string.Equals(found.Description, request.Description)
+                || !string.Equals(found.Status, request.Status)
+                || !string.Equals(found.Priority, request.Priority)
+                || !string.Equals(found.HoursToDo, request.HoursToDo)
+                || !string.Equals(found.HoursLogged, request.HoursLogged)
+                || !string.Equals(found.AssigneeId, request.AssigneeId))
+            {
+                found.UpdatedAt = DateTime.UtcNow;
+            }
+
             found.Title = request.Title;
             found.Description = request.Description;
             found.Status = request.Status;
             found.Priority = request.Priority;
-            found.Hours = request.Hours;
+            found.HoursToDo = request.HoursToDo;
+            found.HoursLogged = request.HoursLogged;
+            found.AssigneeId = request.AssigneeId;
+
+            if (request.AssigneeId != null)
+            {
+                found.TakenAt = DateTime.UtcNow;
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
-            return ToResponse(found);
+            return TaskMapper.ToLongResponse(found);
         }
 
 
         public async Task DeleteAsync(
+            int userId,
             int projectId,
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityById(projectId, taskId, cancellationToken);
+            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
             _context.Tasks.Remove(found);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
 
 
-        private async Task<TaskEntity> GetEntityById(
+        private async Task<TaskEntity> GetEntity(
+            int userId,
             int projectId, 
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
+            await _userService.EnsureUserExistsAsync(userId);
+            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
 
             var found = await _context.Tasks
+                .Include(x => x.Creator)
+                .Include(x => x.Project)
+                .Include(x => x.Assignee)
                 .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.Id == taskId, cancellationToken);
 
             if (found == null)

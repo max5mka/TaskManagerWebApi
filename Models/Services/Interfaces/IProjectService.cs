@@ -6,11 +6,11 @@ namespace TaskManagerWebApi.Models.Services.Interfaces
 {
     public interface IProjectService
     {
-        Task<IEnumerable<ProjectResponse>> GetAllAsync(ProjectFilter filter, CancellationToken cancellationToken = default);
-        Task<ProjectResponse> GetByIdAsync(int id, CancellationToken cancellationToken = default);
-        Task<ProjectResponse> CreateAsync(CreateProjectRequest request, CancellationToken token = default);
-        Task<ProjectResponse> UpdateAsync(int id, UpdateProjectRequest request, CancellationToken token = default);
-        Task DeleteAsync(int id, CancellationToken cancellationToken = default);
-        Task EnsureProjectExistsAsync(int id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProjectShortResponse>> GetAllAsync(int userId, ProjectFilter filter, CancellationToken cancellationToken = default);
+        Task<ProjectLongResponse> GetByIdAsync(int userId, int projectId, CancellationToken cancellationToken = default);
+        Task<ProjectCreateResponse> CreateAsync(int userId, ProjectCreateRequest request, CancellationToken token = default);
+        Task<ProjectLongResponse> UpdateAsync(int userId, int projectId, ProjectUpdateRequest request, CancellationToken token = default);
+        Task DeleteAsync(int userId, int projectId, CancellationToken cancellationToken = default);
+        Task EnsureProjectExistsAsync(int userId, int projectId, CancellationToken cancellationToken = default);
     }
 }

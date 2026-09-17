@@ -1,6 +1,6 @@
 ﻿namespace TaskManagerWebApi.Models.Requests
 {
-    public class UpdateProjectRequest : ProjectRequestBase
+    public class ProjectUpdateRequest : ProjectBaseRequest
     {
         public required string Status { get; set; }
     }

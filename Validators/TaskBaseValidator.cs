@@ -1,13 +1,12 @@
 ﻿using FluentValidation;
-using TaskManagerWebApi.Models.Constants;
 using TaskManagerWebApi.Models.Enums;
 using TaskManagerWebApi.Models.Requests;
 
 namespace TaskManagerWebApi.Validators
 {
-    public abstract class TaskRequestBaseValidator<T> : AbstractValidator<T> where T : TaskRequestBase
+    public abstract class TaskBaseValidator<T> : AbstractValidator<T> where T : TaskBaseRequest
     {
-        protected TaskRequestBaseValidator()
+        protected TaskBaseValidator()
         {
             int titleLen = 200;
             RuleFor(x => x.Title)
@@ -20,12 +19,12 @@ namespace TaskManagerWebApi.Validators
                 .MaximumLength(descrLen).WithMessage($"Description may not exceed {descrLen} characters");
 
             int maxHours = 100;
-            RuleFor(x => x.Hours)
+            RuleFor(x => x.HoursToDo)
                 .GreaterThan(0).WithMessage("Number of hours must be greater than 0")
                 .LessThanOrEqualTo(maxHours).WithMessage($"Number of hours may not exceed {maxHours}");
 
             RuleFor(x => x.Priority)
-                .IsInEnum()
+                .Must(p => Enum.TryParse<PriorityEnum>(p, true, out _))
                 .WithMessage($"Priority must be one of: {string.Join(", ", Enum.GetNames(typeof(PriorityEnum)))}");
         }
     }

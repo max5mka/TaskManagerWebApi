@@ -8,11 +8,16 @@
         public required string Status { get; set; } // статус
         public required DateTime Start { get; set; } // начало сроков
         public required DateTime Deadline { get; set; } // конец сроков
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<TaskEntity> Tasks = new List<TaskEntity>(); // задачи
+        public required int CreatorId { get; set; }
+        public UserEntity Creator { get; set; } = null!;
+
+        public ICollection<TaskEntity> Tasks { get; set; } = new List<TaskEntity>(); // задачи
+        public ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>(); // участники
+
         public double TotalHours => (Deadline - Start).TotalHours; // всего часов
-        public double HoursSpent => Tasks.Sum(x => x.Hours); // потрачено на задачи
+        public double HoursSpent => Tasks.Sum(x => x.HoursToDo); // потрачено на задачи
     }
 }

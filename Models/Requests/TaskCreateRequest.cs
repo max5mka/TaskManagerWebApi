@@ -2,5 +2,5 @@
 
 namespace TaskManagerWebApi.Models.Requests
 {
-    public class CreateTaskRequest : TaskRequestBase { }
+    public class TaskCreateRequest : TaskBaseRequest { }
 }

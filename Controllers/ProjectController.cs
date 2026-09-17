@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerWebApi.Models;
 using TaskManagerWebApi.Models.Filters;
@@ -9,30 +10,36 @@ using TaskManagerWebApi.Models.Services.Interfaces;
 namespace TaskManagerWebApi.Controllers
 {
     [ApiController]
-    [Route("api/Projects")]
+    [Route("api/Users/{userId}/Projects")]
+    [Authorize]
     public class ProjectController(IProjectService _service) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync([FromQuery]ProjectFilter filter)
+        public async Task<IActionResult> GetAllAsync(
+            [FromRoute] int userId, 
+            [FromQuery] ProjectFilter filter)
         {
-            var foundList = await _service.GetAllAsync(filter);
+            var foundList = await _service.GetAllAsync(userId, filter);
             return Ok(foundList);
         }
 
 
-        [HttpGet("{id:int}")]
+        [HttpGet("{projectId:int}")]
         [ActionName(nameof(GetByIdAsync))]
-        public async Task<IActionResult> GetByIdAsync([FromRoute]int id)
+        public async Task<IActionResult> GetByIdAsync(
+            [FromRoute] int userId, 
+            [FromRoute] int projectId)
         {
-            var found = await _service.GetByIdAsync(id);
+            var found = await _service.GetByIdAsync(userId, projectId);
             return Ok(found);
         }
 
 
         [HttpPost]
         public async Task<IActionResult> CreateAsync(
-            [FromBody] CreateProjectRequest request,
-            [FromServices] IValidator<CreateProjectRequest> validator)
+            [FromRoute] int userId,
+            [FromBody] ProjectCreateRequest request,
+            [FromServices] IValidator<ProjectCreateRequest> validator)
         {
             var validationResult = await validator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -40,21 +47,22 @@ namespace TaskManagerWebApi.Controllers
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            var created = await _service.CreateAsync(request);
+            var created = await _service.CreateAsync(userId, request);
 
             return CreatedAtAction(
                 nameof(GetByIdAsync),
-                new { id = created.Id },
+                new { userId, projectId = created.Id },
                 created
             );
         }
 
 
-        [HttpPut("{id:int}")]
+        [HttpPut("{projectId:int}")]
         public async Task<IActionResult> UpdateAsync(
-            [FromRoute] int id, 
-            [FromBody] UpdateProjectRequest request,
-            [FromServices] IValidator<UpdateProjectRequest> validator)
+            [FromRoute] int userId,
+            [FromRoute] int projectId, 
+            [FromBody] ProjectUpdateRequest request,
+            [FromServices] IValidator<ProjectUpdateRequest> validator)
         {
             var validationResult = await validator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -62,15 +70,17 @@ namespace TaskManagerWebApi.Controllers
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            var updated = await _service.UpdateAsync(id, request);
+            var updated = await _service.UpdateAsync(userId, projectId, request);
             return Ok(updated);
         }
 
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteAsync([FromRoute]int id)
+        [HttpDelete("{projectId:int}")]
+        public async Task<IActionResult> DeleteAsync(
+            [FromRoute] int userId, 
+            [FromRoute]int projectId)
         {
-            await _service.DeleteAsync(id);
+            await _service.DeleteAsync(userId, projectId);
             return NoContent();
         }
     }

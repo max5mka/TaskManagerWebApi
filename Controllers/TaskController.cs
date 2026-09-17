@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerWebApi.Models.Filters;
 using TaskManagerWebApi.Models.Requests;
@@ -7,15 +8,17 @@ using TaskManagerWebApi.Models.Services.Interfaces;
 namespace TaskManagerWebApi.Controllers
 {
     [ApiController]
-    [Route("api/Projects/{projectId:int}/Tasks")]
+    [Route("api/Users/{userId}/Projects/{projectId:int}/Tasks")]
+    [Authorize]
     public class TaskController(ITaskService _taskService) : ControllerBase
     {
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(
+            [FromRoute] int userId,
             [FromRoute] int projectId,
             [FromQuery] TaskFilter filter)
         {
-            var foundList = await _taskService.GetAllAsync(projectId, filter);
+            var foundList = await _taskService.GetAllAsync(userId, projectId, filter);
             return Ok(foundList);
         }
 
@@ -23,19 +26,21 @@ namespace TaskManagerWebApi.Controllers
         [HttpGet("{taskId:int}")]
         [ActionName(nameof(GetByIdAsync))]
         public async Task<IActionResult> GetByIdAsync(
+            [FromRoute] int userId,
             [FromRoute] int projectId, 
             [FromRoute] int taskId)
         {
-            var found = await _taskService.GetByIdAsync(projectId, taskId);
+            var found = await _taskService.GetByIdAsync(userId, projectId, taskId);
             return Ok(found);
         }
 
 
         [HttpPost]
         public async Task<IActionResult> CreateAsync(
+            [FromRoute] int userId,
             [FromRoute] int projectId, 
-            [FromBody] CreateTaskRequest request,
-            [FromServices] IValidator<CreateTaskRequest> validator)
+            [FromBody] TaskCreateRequest request,
+            [FromServices] IValidator<TaskCreateRequest> validator)
         {
             var validationResult = await validator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -43,11 +48,11 @@ namespace TaskManagerWebApi.Controllers
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            var created = await _taskService.CreateAsync(projectId, request);
+            var created = await _taskService.CreateAsync(userId, projectId, request);
 
             return CreatedAtAction(
                 nameof(GetByIdAsync),
-                new { projectId, taskId = created.Id },
+                new { userId, projectId, taskId = created.Id },
                 created
             );
         }
@@ -55,10 +60,11 @@ namespace TaskManagerWebApi.Controllers
 
         [HttpPut("{taskId:int}")]
         public async Task<IActionResult> UpdateAsync(
+            [FromRoute] int userId,
             [FromRoute] int projectId,
             [FromRoute] int taskId,
-            [FromBody] UpdateTaskRequest request,
-            [FromServices] IValidator<UpdateTaskRequest> validator)
+            [FromBody] TaskUpdateRequest request,
+            [FromServices] IValidator<TaskUpdateRequest> validator)
         {
             var validationResult = await validator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -66,17 +72,18 @@ namespace TaskManagerWebApi.Controllers
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            var updated = await _taskService.UpdateAsync(projectId, taskId, request);
+            var updated = await _taskService.UpdateAsync(userId, projectId, taskId, request);
             return Ok(updated);
         }
 
 
         [HttpDelete("{taskId:int}")]
         public async Task<IActionResult> DeleteAsync(
+            [FromRoute] int userId,
             [FromRoute] int projectId,
             [FromRoute] int taskId)
         {
-            await _taskService.DeleteAsync(projectId, taskId);
+            await _taskService.DeleteAsync(userId, projectId, taskId);
             return NoContent();
         }
     }

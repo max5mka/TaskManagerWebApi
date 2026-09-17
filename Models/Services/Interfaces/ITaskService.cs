@@ -7,15 +7,15 @@ namespace TaskManagerWebApi.Models.Services.Interfaces
 {
     public interface ITaskService
     {
-        Task<IEnumerable<TaskResponse>> GetAllAsync(
-            int projectId, TaskFilter filter, CancellationToken cancellationToken = default);
-        Task<TaskResponse> GetByIdAsync(
-            int projectId, int taskId, CancellationToken cancellationToken = default);
-        Task<TaskResponse> CreateAsync(
-            int projectId, CreateTaskRequest request, CancellationToken cancellationToken = default);
-        Task<TaskResponse> UpdateAsync(
-            int projectId, int taskId, UpdateTaskRequest request, CancellationToken cancellationToken = default);
+        Task<IEnumerable<TaskShortResponse>> GetAllAsync(
+            int userId, int projectId, TaskFilter filter, CancellationToken cancellationToken = default);
+        Task<TaskLongResponse> GetByIdAsync(
+            int userId, int projectId, int taskId, CancellationToken cancellationToken = default);
+        Task<TaskCreateResponse> CreateAsync(
+            int userId, int projectId, TaskCreateRequest request, CancellationToken cancellationToken = default);
+        Task<TaskLongResponse> UpdateAsync(
+            int userId, int projectId, int taskId, TaskUpdateRequest request, CancellationToken cancellationToken = default);
         Task DeleteAsync(
-            int projectId, int taskId, CancellationToken cancellationToken = default);
+            int userId, int projectId, int taskId, CancellationToken cancellationToken = default);
     }
 }
