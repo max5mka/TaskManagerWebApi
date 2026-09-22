@@ -13,7 +13,6 @@ namespace TaskManagerWebApi
         {
             serviceCollection.AddScoped<ITaskService, TaskService>();
             serviceCollection.AddScoped<IProjectService, ProjectService>();
-            serviceCollection.AddScoped<IUserService, UserService>();
             serviceCollection.AddScoped<IAuthService, AuthService>();
             serviceCollection.AddScoped<IJWTService, JWTService>();
             serviceCollection.AddScoped<IMemberService, MemberService>();

@@ -12,7 +12,7 @@ using TaskManagerWebApi.Data;
 namespace TaskManagerWebApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260921140808_UserProjectAndTask")]
+    [Migration("20260922090513_UserProjectAndTask")]
     partial class UserProjectAndTask
     {
         /// <inheritdoc />
@@ -173,6 +173,10 @@ namespace TaskManagerWebApi.Migrations
 
                     b.Property<int>("Id")
                         .HasColumnType("int");
+
+                    b.Property<string>("ProjectRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserId", "ProjectId");
 

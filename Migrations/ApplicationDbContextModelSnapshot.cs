@@ -171,6 +171,10 @@ namespace TaskManagerWebApi.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<string>("ProjectRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("UserId", "ProjectId");
 
                     b.HasIndex("ProjectId");
