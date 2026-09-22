@@ -16,31 +16,31 @@ namespace TaskManagerWebApi.Middleware
         {
             try
             {
-                Console.WriteLine("TRY BEFORE INSIDE");
                 await _next(context);
-                Console.WriteLine("TRY AFTER INSIDE");
-            }
-            catch (NotFoundException ex)
-            {
-                Console.WriteLine("1ST CATCH INSIDE");
-                context.Response.StatusCode = 404;
-                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
-            }
-            catch (UserAlreadyExistsException ex)
-            {
-                Console.WriteLine("2ND CATCH INSIDE");
-                context.Response.StatusCode = 409;
-                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }
             catch (InvalidCredentialException ex)
             {
-                Console.WriteLine("3RD CATCH INSIDE");
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }
+            catch (UnauthorizedException ex)
+            {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
+            catch (NotFoundException ex)
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
+            catch (AlreadyExistsException ex)
+            {
+                context.Response.StatusCode = 409;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
+
             catch (Exception ex)
             {
-                Console.WriteLine("4TH CATCH INSIDE");
                 Console.WriteLine($"Ошибка: {ex.GetType().Name} - {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
 

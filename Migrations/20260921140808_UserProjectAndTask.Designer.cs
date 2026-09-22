@@ -12,7 +12,7 @@ using TaskManagerWebApi.Data;
 namespace TaskManagerWebApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260914114727_UserProjectAndTask")]
+    [Migration("20260921140808_UserProjectAndTask")]
     partial class UserProjectAndTask
     {
         /// <inheritdoc />
@@ -147,6 +147,9 @@ namespace TaskManagerWebApi.Migrations
                     b.Property<string>("HashedPassword")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Login")
                         .IsRequired()

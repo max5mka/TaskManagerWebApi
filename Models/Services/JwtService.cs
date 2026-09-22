@@ -14,9 +14,9 @@ namespace TaskManagerWebApi.Models.Services
         {
             var claims = new List<Claim>
             {
-                new Claim("login", user.Login),
-                new Claim("firstname", user.FirstName),
-                new Claim("id", user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Login),
+                new Claim(ClaimTypes.Role, user.IsAdmin ? "Admin" : "User"),
             };
 
             var jwtToken = new JwtSecurityToken(

@@ -6,6 +6,7 @@
         public required string FirstName { get; set; }
         public required string Login { get; set; }
         public string HashedPassword { get; set; } = null!;
+        public bool IsAdmin { get; set; }
 
         public ICollection<ProjectEntity> CreatedProjects { get; set; } = new List<ProjectEntity>();
         public ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();

@@ -13,17 +13,15 @@ namespace TaskManagerWebApi.Models.Services
 {
     public class TaskService(
         ApplicationDbContext _context,
-        IUserService _userService,
-        IProjectService _projectService) : ITaskService
+        IProjectService _projectService,
+        ICurrentUserService _currentUserService) : ITaskService
     {
         public async Task<IEnumerable<TaskShortResponse>> GetAllAsync(
-            int userId,
             int projectId,
             TaskFilter filter, 
             CancellationToken cancellationToken = default)
         {
-            await _userService.EnsureUserExistsAsync(userId);
-            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
+            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
 
             var query = _context.Tasks
                 .Include(x => x.Creator)
@@ -40,24 +38,22 @@ namespace TaskManagerWebApi.Models.Services
 
 
         public async Task<TaskLongResponse> GetByIdAsync(
-            int userId,
             int projectId,
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
+            var found = await GetEntity(projectId, taskId, cancellationToken);
             return TaskMapper.ToLongResponse(found);
         }
 
 
         public async Task<TaskCreateResponse> CreateAsync(
-            int userId,
             int projectId, 
             TaskCreateRequest request, 
             CancellationToken cancellationToken = default)
         {
-            await _userService.EnsureUserExistsAsync(userId);
-            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
+            var userId = _currentUserService.UserId;
+            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
 
             var entity = TaskMapper.ToEntity(userId, projectId, request);
 
@@ -68,13 +64,12 @@ namespace TaskManagerWebApi.Models.Services
 
 
         public async Task<TaskLongResponse> UpdateAsync(
-            int userId,
             int projectId,
             int taskId, 
             TaskUpdateRequest request, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
+            var found = await GetEntity(projectId, taskId, cancellationToken);
 
             if (!string.Equals(found.Title, request.Title)
                 || !string.Equals(found.Description, request.Description)
@@ -106,12 +101,11 @@ namespace TaskManagerWebApi.Models.Services
 
 
         public async Task DeleteAsync(
-            int userId,
             int projectId,
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            var found = await GetEntity(userId, projectId, taskId, cancellationToken);
+            var found = await GetEntity(projectId, taskId, cancellationToken);
             _context.Tasks.Remove(found);
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -119,13 +113,11 @@ namespace TaskManagerWebApi.Models.Services
 
 
         private async Task<TaskEntity> GetEntity(
-            int userId,
             int projectId, 
             int taskId, 
             CancellationToken cancellationToken = default)
         {
-            await _userService.EnsureUserExistsAsync(userId);
-            await _projectService.EnsureProjectExistsAsync(userId, projectId, cancellationToken);
+            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
 
             var found = await _context.Tasks
                 .Include(x => x.Creator)

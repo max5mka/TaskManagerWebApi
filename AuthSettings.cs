@@ -1,4 +1,4 @@
-﻿namespace TaskManagerWebApi.Models
+﻿namespace TaskManagerWebApi
 {
     public class AuthSettings
     {

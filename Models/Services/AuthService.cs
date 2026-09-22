@@ -17,7 +17,7 @@ namespace TaskManagerWebApi.Models.Services
         public async Task RegisterAsync(UserRegisterRequest request, CancellationToken cancellationToken = default)
         {
             if (await _context.Users.AnyAsync(x => x.Login == request.Login))
-                throw new UserAlreadyExistsException($"User with login {request.Login} alredy exists");
+                throw new AlreadyExistsException($"User with login {request.Login} alredy exists");
 
             var newUser = new UserEntity
             { 

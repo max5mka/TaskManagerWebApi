@@ -16,7 +16,7 @@ namespace TaskManagerWebApi.Models.Mappers
                 Start = request.Start,
                 Deadline = request.Deadline,
                 CreatorId = userId,
-                UserProjects = new List<UserProject> { new UserProject { UserId = userId }, }
+                UserProjects = new List<UserProject> { new UserProject { UserId = userId, ProjectRole = ProjectRoles.Owner }, }
             };
 
         public static ProjectCreateResponse ToCreateResponse(ProjectEntity entity) =>
@@ -59,9 +59,7 @@ namespace TaskManagerWebApi.Models.Mappers
                 TotalHours = entity.TotalHours,
                 HoursSpent = entity.HoursSpent,
                 Creator = UserMapper.ToResponse(entity.Creator),
-                Members = entity.UserProjects?
-                        .Select(up => UserMapper.ToResponse(up.User))
-                        .ToList() ?? new List<UserResponse>(),
+                Members = MemberMapper.ToResponses(entity.UserProjects.ToList()),
                 Tasks = TaskMapper.ToShortResponses(entity.Tasks.ToList())
             };
 

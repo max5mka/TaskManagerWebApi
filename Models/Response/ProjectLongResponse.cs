@@ -15,7 +15,7 @@ namespace TaskManagerWebApi.Models.Response
         public required double TotalHours { get; set; }
         public required double HoursSpent { get; set; }
         public required UserResponse Creator { get; set; }
-        public required List<UserResponse> Members { get; set; }
+        public required List<MemberResponse> Members { get; set; }
         public required List<TaskShortResponse> Tasks { get; set; }
     }
 }

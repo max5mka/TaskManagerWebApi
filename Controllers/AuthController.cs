@@ -9,7 +9,7 @@ namespace TaskManagerWebApi.Controllers
     [Route("api/")]
     public class AuthController(IAuthService _service) : ControllerBase
     {
-        [HttpPost("Register")]
+        [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
         {
             await _service.RegisterAsync(request);
@@ -17,7 +17,7 @@ namespace TaskManagerWebApi.Controllers
         }
 
 
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserAuthorizeRequest request)
         {
             var token = await _service.LoginAsync(request);

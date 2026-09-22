@@ -2,9 +2,9 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using TaskManagerWebApi;
 using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Middleware;
-using TaskManagerWebApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +49,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await SeedData.EnsureAdminCreatedAsync(context);
+}
 
 // Configure the HTTP request pipeline.
 

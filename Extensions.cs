@@ -5,7 +5,7 @@ using System.Text;
 using TaskManagerWebApi.Models.Services;
 using TaskManagerWebApi.Models.Services.Interfaces;
 
-namespace TaskManagerWebApi.Models
+namespace TaskManagerWebApi
 {
     public static class Extensions
     {
@@ -16,6 +16,10 @@ namespace TaskManagerWebApi.Models
             serviceCollection.AddScoped<IUserService, UserService>();
             serviceCollection.AddScoped<IAuthService, AuthService>();
             serviceCollection.AddScoped<IJWTService, JWTService>();
+            serviceCollection.AddScoped<IMemberService, MemberService>();
+            serviceCollection.AddScoped<IAdminService, AdminService>();
+            serviceCollection.AddHttpContextAccessor();
+            serviceCollection.AddScoped<ICurrentUserService, CurrentUserService>();
             return serviceCollection;
         }
 
