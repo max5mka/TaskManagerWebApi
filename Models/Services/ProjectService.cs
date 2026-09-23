@@ -34,7 +34,7 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task<ProjectLongResponse> GetByIdAsync(int projectId, CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityWithDetailsAsync(projectId, cancellationToken);
+            var found = await GetProjectWithDetailsAsync(projectId, cancellationToken);
             return ProjectMapper.ToLongResponse(found);
         }
 
@@ -53,7 +53,7 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task<ProjectLongResponse> UpdateAsync(int projectId, ProjectUpdateRequest request, CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityWithDetailsAsync(projectId, cancellationToken);
+            var found = await GetProjectWithDetailsAsync(projectId, cancellationToken);
 
             if (!string.Equals(found.Title, request.Title)
                 || !string.Equals(found.Description, request.Description)
@@ -77,14 +77,14 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task DeleteAsync(int projectId, CancellationToken cancellationToken = default)
         {
-            var found = await GetEntityAsync(projectId, cancellationToken);
+            var found = await GetProjectAsync(projectId, cancellationToken);
             _context.Projects.Remove(found);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
 
 
-        private async Task<ProjectEntity> GetEntityWithDetailsAsync(int projectId, CancellationToken cancellationToken = default)
+        private async Task<ProjectEntity> GetProjectWithDetailsAsync(int projectId, CancellationToken cancellationToken = default)
         {
             await EnsureProjectExistsAsync(projectId, cancellationToken);
 
@@ -95,7 +95,7 @@ namespace TaskManagerWebApi.Models.Services
                 .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
         }
 
-        private async Task<ProjectEntity> GetEntityAsync(int projectId, CancellationToken cancellationToken = default)
+        private async Task<ProjectEntity> GetProjectAsync(int projectId, CancellationToken cancellationToken = default)
         {
             await EnsureProjectExistsAsync(projectId, cancellationToken);
 
@@ -106,8 +106,6 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task EnsureProjectExistsAsync(int projectId, CancellationToken cancellationToken = default)
         {
-            var userId = _currentUserService.UserId;
-
             if (!await _context.Projects.AnyAsync(p => p.Id == projectId, cancellationToken))
             {
                 throw new NotFoundException($"Project with id={projectId} not found.");

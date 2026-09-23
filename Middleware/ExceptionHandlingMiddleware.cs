@@ -28,6 +28,11 @@ namespace TaskManagerWebApi.Middleware
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }
+            catch (ForbiddenException ex)
+            {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            }
             catch (NotFoundException ex)
             {
                 context.Response.StatusCode = 404;
@@ -41,9 +46,6 @@ namespace TaskManagerWebApi.Middleware
 
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка: {ex.GetType().Name} - {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsJsonAsync(new { message = ex.Message });
             }

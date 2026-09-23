@@ -34,10 +34,11 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task<string> LoginAsync(UserAuthorizeRequest request, CancellationToken cancellationToken = default)
         {
-            if (!await _context.Users.AnyAsync(x => x.Login == request.Login))
-                throw new NotFoundException($"Invalid login or password");
+            var found = await _context.Users
+                .FirstOrDefaultAsync(x => x.Login == request.Login, cancellationToken);
 
-            var found = await _context.Users.FirstOrDefaultAsync(x => x.Login == request.Login);
+            if (found == null)
+                throw new UnauthorizedException("Invalid login or password");
 
             var result = new PasswordHasher<UserEntity>()
                 .VerifyHashedPassword(found, found.HashedPassword, request.Password);
@@ -48,7 +49,7 @@ namespace TaskManagerWebApi.Models.Services
             }
             else
             {
-                throw new InvalidCredentialException("Invalid login or password");
+                throw new UnauthorizedException("Invalid login or password");
             }
         }
     }

@@ -18,5 +18,10 @@ namespace TaskManagerWebApi.Models.Services.Interfaces
                 return int.Parse(claim);
             }
         }
+
+        public void EnsureUserExists()
+        {
+            _ = UserId;
+        }
     }
 }
