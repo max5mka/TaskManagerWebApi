@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Exceptions;
 using TaskManagerWebApi.Models.Constants;
@@ -26,6 +25,7 @@ namespace TaskManagerWebApi.Models.Services
             var query = _context.UserProjects
                 .Include(x => x.User)
                 .Where(x => x.ProjectId == projectId)
+                .OrderBy(x => x.Id)
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize);
 

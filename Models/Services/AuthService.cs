@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using System.Security.Authentication;
 using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Exceptions;

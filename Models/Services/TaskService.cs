@@ -29,6 +29,7 @@ namespace TaskManagerWebApi.Models.Services
                 .Where(x => x.ProjectId == projectId)
                 .Where(x => filter.Status == null || x.Status == filter.Status)
                 .Where(x => filter.Priority == null || x.Priority == filter.Priority)
+                .OrderBy(x => x.Id)
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize);
 

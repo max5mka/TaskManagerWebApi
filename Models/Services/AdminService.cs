@@ -14,6 +14,7 @@ namespace TaskManagerWebApi.Models.Services
         {
             var query = _context.Users
                 .Where(x => !x.IsAdmin)
+                .OrderBy(x => x.Id)
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize);
 

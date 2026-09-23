@@ -1,5 +1,4 @@
-﻿using Microsoft.Identity.Client;
-using TaskManagerWebApi.Models.Entities;
+﻿using TaskManagerWebApi.Models.Entities;
 using TaskManagerWebApi.Models.Requests;
 using TaskManagerWebApi.Models.Response;
 
