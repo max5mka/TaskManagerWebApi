@@ -1,4 +1,4 @@
 <Solution>
   <Project Path="Api.IntegrationTests/Api.IntegrationTests.csproj" Id="6cad90a5-0da3-4d5e-a578-b7df2707986b" />
-  <Project Path="TaskManagerWebApi.csproj" />
+  <Project Path="TaskManagerWebApi/TaskManagerWebApi.csproj" />
 </Solution>
