@@ -11,8 +11,8 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public required int CreatorId { get; set; }
-        public UserEntity Creator { get; set; } = null!;
+        public int CreatorId { get; set; }
+        public UserEntity Creator { get; set; }
 
         public ICollection<TaskEntity> Tasks { get; set; } = new List<TaskEntity>(); // задачи
         public ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>(); // участники

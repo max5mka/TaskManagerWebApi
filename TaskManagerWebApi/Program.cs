@@ -10,25 +10,37 @@ using TaskManagerWebApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .WriteTo.Console()
-    .WriteTo.MSSqlServer(
-        connectionString: builder.Configuration.GetConnectionString("DefaultConnection"),
-        sinkOptions: new MSSqlServerSinkOptions
-        {
-            TableName = "Logs",
-            AutoCreateSqlTable = true
-        })
-    .CreateLogger();
+// 1. Serilog
+if (builder.Environment.IsDevelopment())
+{
+    Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .WriteTo.Console()
+        .WriteTo.MSSqlServer(
+            connectionString: builder.Configuration.GetConnectionString("DefaultConnection"),
+            sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true })
+        .CreateLogger();
+}
+else
+{
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console()
+        .CreateLogger();
+}
 
 builder.Host.UseSerilog();
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 2. Сервисы
+/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => 
-    options.UseSqlServer(connectionString),ServiceLifetime.Scoped);
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString), ServiceLifetime.Scoped);*/
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var connectionString = configuration.GetConnectionString("DefaultConnection");
+    options.UseSqlServer(connectionString);
+});
 
 builder.Services.AddData();
 builder.Services.AddAuth(builder.Configuration);
@@ -38,7 +50,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
 
-    c.AddSecurityDefinition(name: JwtBearerDefaults.AuthenticationScheme, 
+    c.AddSecurityDefinition(name: JwtBearerDefaults.AuthenticationScheme,
         securityScheme: new OpenApiSecurityScheme
         {
             Name = "Authorization",
@@ -65,16 +77,25 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// 3. Build
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// 4. SeedData
+if (app.Environment.IsDevelopment())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await SeedData.EnsureAdminCreatedAsync(context);
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await SeedData.EnsureAdminCreatedAsync(context);
+    }
 }
 
-// Configure the HTTP request pipeline.
-app.UseDeveloperExceptionPage();
+// 5. Middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -83,4 +104,5 @@ app.MapControllers();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// 6. Run
 app.Run();
