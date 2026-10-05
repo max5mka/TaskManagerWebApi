@@ -71,11 +71,6 @@ namespace Api.IntegrationTests
             await db.Set<TEntity>().AddRangeAsync(entities);
             await db.SaveChangesAsync();
 
-            /*foreach (var entity in entities)
-            {
-                db.Entry(entity).State = EntityState.Detached;
-            }*/
-
             return entities;
         }
     }

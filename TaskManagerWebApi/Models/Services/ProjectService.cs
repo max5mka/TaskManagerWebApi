@@ -134,25 +134,29 @@ namespace TaskManagerWebApi.Models.Services
         {
             await EnsureProjectExistsAsync(projectId, cancellationToken);
 
+            var userId = _currentUserService.UserId;
             return await _context.Projects
                 .Include(p => p.Tasks)  
                 .Include(p => p.UserProjects)
                     .ThenInclude(up => up.User)
-                .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
+                .SingleAsync(p => p.Id == projectId && p.UserProjects.Any(up => up.UserId == userId));
         }
 
         private async Task<ProjectEntity> GetProjectAsync(int projectId, CancellationToken cancellationToken = default)
         {
             await EnsureProjectExistsAsync(projectId, cancellationToken);
 
+            var userId = _currentUserService.UserId;
             return await _context.Projects
-                .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
+                .FirstOrDefaultAsync(p => p.Id == projectId && p.UserProjects.Any(up => up.UserId == userId), cancellationToken);
         }
 
 
         public async Task EnsureProjectExistsAsync(int projectId, CancellationToken cancellationToken = default)
         {
-            if (!await _context.Projects.AnyAsync(p => p.Id == projectId, cancellationToken))
+            var userId = _currentUserService.UserId;
+
+            if (!await _context.UserProjects.AnyAsync(up => up.UserId == userId && up.ProjectId == projectId, cancellationToken))
             {
                 throw new NotFoundException($"Project with id={projectId} not found.");
             }

@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Crypto;
+﻿using Api.IntegrationTests.TestData;
+using Org.BouncyCastle.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -15,7 +16,7 @@ namespace Api.IntegrationTests.Controllers
         public async Task Register_ReturnsOk()
         {
             // Arrange
-            var request = GetSimpleRegisterRequest();
+            var request = UsersData.GetSimpleRegisterRequest();
 
             // Act
             var response = await Client.PostAsJsonAsync("/api/register", request);
@@ -28,7 +29,7 @@ namespace Api.IntegrationTests.Controllers
         public async Task Register_LoginAlreadyExists()
         {
             // Arrange
-            var request = GetSimpleRegisterRequest();
+            var request = UsersData.GetSimpleRegisterRequest();
 
             // Act
             await Client.PostAsJsonAsync("/api/register", request);
@@ -42,16 +43,19 @@ namespace Api.IntegrationTests.Controllers
         public async Task Login_ReturnsOkAndJwtToken()
         {
             // Arrange
-            var registerReq = GetSimpleRegisterRequest();
+            var registerReq = UsersData.GetSimpleRegisterRequest();
             var authorizeReq = new UserAuthorizeRequest
             {
                 Login = "login",
                 Password = "password"
             };
 
-            // Act
             await Client.PostAsJsonAsync("/api/register", registerReq);
+
+
+            // Act
             var response = await Client.PostAsJsonAsync("/api/login", authorizeReq);
+
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -68,7 +72,7 @@ namespace Api.IntegrationTests.Controllers
         public async Task Login_InvalidLogin()
         {
             // Arrange
-            var registerReq = GetSimpleRegisterRequest();
+            var registerReq = UsersData.GetSimpleRegisterRequest();
 
             var authorizeReq = new UserAuthorizeRequest { Login = "wrongLogin", Password = "password" };
 
@@ -84,7 +88,7 @@ namespace Api.IntegrationTests.Controllers
         public async Task Login_InvalidPassword()
         {
             // Arrange
-            var registerReq = GetSimpleRegisterRequest();
+            var registerReq = UsersData.GetSimpleRegisterRequest();
             var authorizeReq = new UserAuthorizeRequest { Login = "login", Password = "wrondPassword" };
 
             // Act
@@ -93,16 +97,6 @@ namespace Api.IntegrationTests.Controllers
 
             // Assert
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        }
-
-        private UserRegisterRequest GetSimpleRegisterRequest()
-        {
-            return new UserRegisterRequest
-            {
-                FirstName = "name",
-                Login = "login",
-                Password = "password"
-            };
         }
     }
 }
