@@ -10,31 +10,15 @@ using TaskManagerWebApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Serilog
-if (builder.Environment.IsDevelopment())
-{
-    Log.Logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(builder.Configuration)
-        .WriteTo.Console()
-        .WriteTo.MSSqlServer(
-            connectionString: builder.Configuration.GetConnectionString("DefaultConnection"),
-            sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true })
-        .CreateLogger();
-}
-else
-{
-    Log.Logger = new LoggerConfiguration()
-        .WriteTo.Console()
-        .CreateLogger();
-}
+// 1. Serilog — только консоль (БД ещё нет)
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Console()
+    .CreateLogger();
 
 builder.Host.UseSerilog();
 
 // 2. Сервисы
-/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString), ServiceLifetime.Scoped);*/
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
@@ -80,14 +64,12 @@ builder.Services.AddSwaggerGen(c =>
 // 3. Build
 var app = builder.Build();
 
-// 4. SeedData
-if (app.Environment.IsDevelopment())
+// 4. Миграции + SeedData
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await SeedData.EnsureAdminCreatedAsync(context);
-    }
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();               // ← Сначала
+    await SeedData.EnsureAdminCreatedAsync(context);     // ← Потом
 }
 
 // 5. Middleware

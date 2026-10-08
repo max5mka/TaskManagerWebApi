@@ -132,6 +132,14 @@ namespace Api.IntegrationTests.Controllers
             // Assert
             Assert.NotNull(response);
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            var result = await response.Content.ReadFromJsonAsync<ProjectCreateResponse>();
+            Assert.NotNull(result);
+            Assert.Equal(projectReq.Title, result.Title);
+            Assert.Equal(projectReq.Description, result.Description);
+            Assert.Equal(projectReq.Start, result.Start);
+            Assert.Equal(projectReq.Deadline, result.DeadLine);
+            Assert.Equal(Statuses.New, result.Status);
         }
     }
 }
