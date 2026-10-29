@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager Frontend</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        input {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Блок Авторизации -->
+    <div id="auth-section">
+
+        <!-- ФОРМА ВХОДА -->
+        <div id="login-form">
+            <h2>Вход</h2>
+            <input type="text" id="login-login" placeholder="Логин" />
+            <input type="password" id="login-password" placeholder="Пароль" />
+            <button onclick="login()">Войти</button>
+
+            <!-- Кликабельный текст для перехода на регистрацию -->
+            <p style="margin-top: 15px;">
+                Нет аккаунта?
+                <a href="#" onclick="toggleAuth('register'); return false;">Зарегистрироваться</a>
+            </p>
+        </div>
+
+        <!-- ФОРМА РЕГИСТРАЦИИ (скрыта по умолчанию) -->
+        <div id="register-form" class="hidden">
+            <h2>Регистрация</h2>
+            <input type="text" id="reg-name" placeholder="Имя" />
+            <input type="text" id="reg-login" placeholder="Логин" />
+            <input type="password" id="reg-password" placeholder="Пароль" />
+            <button onclick="register()">Зарегистрироваться</button>
+
+            <!-- Кликабельный текст для перехода на вход -->
+            <p style="margin-top: 15px;">
+                Уже есть аккаунт?
+                <a href="#" onclick="toggleAuth('login'); return false;">Войти</a>
+            </p>
+        </div>
+
+        <p id="auth-error" class="error"></p>
+    </div>
+
+    <!-- Блок с проектами (скрыт по умолчанию) -->
+    <div id="projects-section" class="hidden">
+        <h2>Мои проекты</h2>
+        <button onclick="logout()">Выйти</button>
+        <button onclick="loadProjects()">Обновить список</button>
+
+        <div id="projects-list"></div>
+    </div>
+
+    <script>
+        // Базовый URL твоего API (замени порт, если нужно)
+        const API_URL = 'http://localhost:8080/api';
+
+        function toggleAuth(form) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+        
+            // Очищаем ошибки при переключении
+            document.getElementById('auth-error').innerText = '';
+        
+            if (form === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+            } else {
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            }
+        }
+
+        // 1. Регистрация
+        async function register() {
+            const name = document.getElementById('reg-name').value;
+            const login = document.getElementById('reg-login').value;
+            const password = document.getElementById('reg-password').value;
+        
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName: name, login: login, password: password })
+            });
+        
+            if (res.ok) {
+                alert('Регистрация успешна! Теперь войдите.');
+                toggleAuth('login'); // Переключаем на форму входа
+            } else {
+                document.getElementById('auth-error').innerText = 'Ошибка регистрации';
+            }
+        }
+
+        // 2. Логин
+        async function login() {
+            const login = document.getElementById('login-login').value;
+            const password = document.getElementById('login-password').value;
+        
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login: login, password: password })
+            });
+        
+            if (res.ok) {
+                const token = await res.text();
+                localStorage.setItem('jwt_token', token);
+                showProjectsSection();
+                loadProjects();
+            } else {
+                document.getElementById('auth-error').innerText = 'Неверный логин или пароль';
+            }
+        }
+
+        // 3. Загрузка проектов
+        async function loadProjects() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/projects`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                const projects = await res.json();
+                const listDiv = document.getElementById('projects-list');
+                listDiv.innerHTML = ''; // Очистить старые данные
+
+                if (projects.length === 0) {
+                    listDiv.innerHTML = '<p>У вас пока нет проектов.</p>';
+                    return;
+                }
+
+                projects.forEach(p => {
+                    listDiv.innerHTML += `
+                        <div class="card">
+                            <h3>${p.title}</h3>
+                            <p>${p.description}</p>
+                            <p>Статус: ${p.status}</p>
+                        </div>
+                    `;
+                });
+            } else {
+                document.getElementById('projects-list').innerText = 'Ошибка загрузки проектов';
+            }
+        }
+
+        // 4. Выход
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+        }
+
+        function showProjectsSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.remove('hidden');
+        }
+
+        // Проверяем, есть ли уже токен при загрузке страницы
+        if (localStorage.getItem('jwt_token')) {
+            showProjectsSection();
+            loadProjects();
+        }
+    </script>
+</body>
+</html>

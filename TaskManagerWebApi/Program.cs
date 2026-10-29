@@ -26,6 +26,16 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
     options.UseSqlServer(connectionString);
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddData();
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
@@ -78,13 +88,18 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// 6. Run
 app.Run();
