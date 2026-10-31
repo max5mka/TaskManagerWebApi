@@ -20,10 +20,31 @@
         }
 
         .card {
+            position: relative;
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 30px 10px 10px;
             margin-bottom: 10px;
             border-radius: 5px;
+        }
+
+        .project-meta {
+            position: absolute;
+            top: 10px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .project-created {
+            left: 10px;
+        }
+
+        .project-author {
+            right: 10px;
+            text-align: right;
+        }
+
+        #projects-list {
+            margin-top: 10px;
         }
 
         input {
@@ -36,6 +57,22 @@
         button {
             padding: 5px 15px;
             cursor: pointer;
+        }
+
+        .project-form {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .project-form textarea {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 100%;
+            min-height: 80px;
+            box-sizing: border-box;
+            resize: vertical;
         }
     </style>
 </head>
@@ -80,7 +117,21 @@
     <div id="projects-section" class="hidden">
         <h2>Мои проекты</h2>
         <button onclick="logout()">Выйти</button>
+        <button onclick="toggleProjectForm()">Создать проект</button>
         <button onclick="loadProjects()">Обновить список</button>
+
+        <form id="project-form" class="project-form hidden" onsubmit="createProject(event)">
+            <h3>Новый проект</h3>
+            <input type="text" id="project-title" placeholder="Название проекта" maxlength="200" required />
+            <textarea id="project-description" placeholder="Описание проекта" maxlength="5000" required></textarea>
+            <label for="project-start">Начало проекта</label>
+            <input type="datetime-local" id="project-start" required />
+            <label for="project-deadline">Дедлайн</label>
+            <input type="datetime-local" id="project-deadline" required />
+            <button type="submit">Создать</button>
+            <button type="button" onclick="toggleProjectForm()">Отмена</button>
+            <p id="project-error" class="error"></p>
+        </form>
 
         <div id="projects-list"></div>
     </div>
@@ -158,6 +209,11 @@
                 }
             });
 
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
             if (res.ok) {
                 const projects = await res.json();
                 const listDiv = document.getElementById('projects-list');
@@ -171,9 +227,12 @@
                 projects.forEach(p => {
                     listDiv.innerHTML += `
                         <div class="card">
+                            <div class="project-meta project-created">Создан: ${formatDate(p.createdAt, true)}</div>
+                            <div class="project-meta project-author">Автор: ${p.creator?.login ?? '—'}</div>
                             <h3>${p.title}</h3>
-                            <p>${p.description}</p>
                             <p>Статус: ${p.status}</p>
+                            <p>Дата начала: ${formatDate(p.start)}</p>
+                            <p>Дедлайн: ${formatDate(p.deadline)}</p>
                         </div>
                     `;
                 });
@@ -182,9 +241,78 @@
             }
         }
 
+        function formatDate(value, isUtc = false) {
+            if (!value) return '—';
+
+            const dateValue = isUtc && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)
+                ? `${value}Z`
+                : value;
+            const date = new Date(dateValue);
+            if (Number.isNaN(date.getTime())) {
+                return value.replace('T', ' ');
+            }
+
+            return date.toLocaleString('ru-RU', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+        }
+
+        function toggleProjectForm() {
+            const form = document.getElementById('project-form');
+            form.classList.toggle('hidden');
+            document.getElementById('project-error').innerText = '';
+        }
+
+        async function createProject(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+
+            const project = {
+                title: document.getElementById('project-title').value,
+                description: document.getElementById('project-description').value,
+                start: document.getElementById('project-start').value,
+                deadline: document.getElementById('project-deadline').value
+            };
+
+            const errorElement = document.getElementById('project-error');
+            errorElement.innerText = '';
+
+            try {
+                const res = await fetch(`${API_URL}/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(project)
+                });
+
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        logout();
+                        return;
+                    }
+
+                    const error = await res.json().catch(() => null);
+                    errorElement.innerText = error?.[0]?.errorMessage || 'Ошибка создания проекта';
+                    return;
+                }
+
+                document.getElementById('project-form').reset();
+                toggleProjectForm();
+                await loadProjects();
+            } catch {
+                errorElement.innerText = 'Не удалось подключиться к серверу';
+            }
+        }
+
         // 4. Выход
         function logout() {
             localStorage.removeItem('jwt_token');
+            document.getElementById('project-form').classList.add('hidden');
             document.getElementById('auth-section').classList.remove('hidden');
             document.getElementById('projects-section').classList.add('hidden');
         }
