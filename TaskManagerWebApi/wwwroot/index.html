@@ -74,6 +74,15 @@
             box-sizing: border-box;
             resize: vertical;
         }
+
+        .project-form input[type="datetime-local"] {
+            width: 220px;
+        }
+
+        .project-form label {
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -117,23 +126,29 @@
     <div id="projects-section" class="hidden">
         <h2>Мои проекты</h2>
         <button onclick="logout()">Выйти</button>
-        <button onclick="toggleProjectForm()">Создать проект</button>
+        <button onclick="showCreateProjectSection()">Создать проект</button>
         <button onclick="loadProjects()">Обновить список</button>
 
-        <form id="project-form" class="project-form hidden" onsubmit="createProject(event)">
-            <h3>Новый проект</h3>
+        <div id="projects-list"></div>
+    </div>
+
+    <!-- Страница создания проекта -->
+    <div id="create-project-section" class="hidden">
+        <h2>Создание проекта</h2>
+
+        <form id="project-form" class="project-form" onsubmit="createProject(event)">
             <input type="text" id="project-title" placeholder="Название проекта" maxlength="200" required />
             <textarea id="project-description" placeholder="Описание проекта" maxlength="5000" required></textarea>
             <label for="project-start">Начало проекта</label>
             <input type="datetime-local" id="project-start" required />
             <label for="project-deadline">Дедлайн</label>
             <input type="datetime-local" id="project-deadline" required />
-            <button type="submit">Создать</button>
-            <button type="button" onclick="toggleProjectForm()">Отмена</button>
+            <div>
+                <button type="submit">Создать</button>
+                <button type="button" onclick="showProjectsSection()">Назад к проектам</button>
+            </div>
             <p id="project-error" class="error"></p>
         </form>
-
-        <div id="projects-list"></div>
     </div>
 
     <script>
@@ -258,12 +273,6 @@
             });
         }
 
-        function toggleProjectForm() {
-            const form = document.getElementById('project-form');
-            form.classList.toggle('hidden');
-            document.getElementById('project-error').innerText = '';
-        }
-
         async function createProject(event) {
             event.preventDefault();
 
@@ -302,7 +311,7 @@
                 }
 
                 document.getElementById('project-form').reset();
-                toggleProjectForm();
+                showProjectsSection();
                 await loadProjects();
             } catch {
                 errorElement.innerText = 'Не удалось подключиться к серверу';
@@ -312,14 +321,23 @@
         // 4. Выход
         function logout() {
             localStorage.removeItem('jwt_token');
-            document.getElementById('project-form').classList.add('hidden');
             document.getElementById('auth-section').classList.remove('hidden');
             document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('projects-section').classList.remove('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-error').innerText = '';
+        }
+
+        function showCreateProjectSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.remove('hidden');
+            document.getElementById('project-error').innerText = '';
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
