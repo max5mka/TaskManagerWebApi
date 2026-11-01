@@ -33,11 +33,11 @@ namespace TaskManagerWebApi.Models.Services
             return MemberMapper.ToResponses(members);
         }
 
-        public async Task AddAsync(int projectId, MemberAddRequest request, CancellationToken cancellationToken = default)
+        public async Task AddByIdAsync(int projectId, MemberAddRequest request, CancellationToken cancellationToken = default)
         {
             await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
             await EnsureUserIsOwnerAsync(projectId, cancellationToken);
-            await _userService.EnsureUserExistsAsync(request.MemberId, cancellationToken);
+            await _userService.EnsureUserExistsByIdAsync(request.MemberId, cancellationToken);
 
             var existing = await _context.UserProjects.FirstOrDefaultAsync(x => x.UserId == request.MemberId && x.ProjectId == projectId);
             if (existing != null)
@@ -46,6 +46,29 @@ namespace TaskManagerWebApi.Models.Services
             var newMember = new UserProject
             {
                 UserId = request.MemberId,
+                ProjectId = projectId,
+                ProjectRole = request.Role
+            };
+
+            _context.UserProjects.Add(newMember);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task AddByLoginAsync(int projectId, MemberAddByLoginRequest request, CancellationToken cancellationToken = default)
+        {
+            await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
+            await EnsureUserIsOwnerAsync(projectId, cancellationToken);
+            await _userService.EnsureUserExistsByLoginAsync(request.MemberLogin, cancellationToken);
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == request.MemberLogin, cancellationToken);
+
+            var existing = await _context.UserProjects.FirstOrDefaultAsync(x => x.UserId == user.Id && x.ProjectId == projectId);
+            if (existing != null)
+                throw new AlreadyExistsException($"This user is already a member");
+
+            var newMember = new UserProject
+            {
+                UserId = user.Id,
                 ProjectId = projectId,
                 ProjectRole = request.Role
             };

@@ -22,7 +22,7 @@ namespace TaskManagerWebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddAsync(
+        public async Task<IActionResult> AddByIdAsync(
             [FromRoute] int projectId,
             [FromBody] MemberAddRequest request,
             [FromServices] IValidator<MemberAddRequest> validator)
@@ -33,7 +33,23 @@ namespace TaskManagerWebApi.Controllers
                 return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
             }
 
-            await _memberService.AddAsync(projectId, request);
+            await _memberService.AddByIdAsync(projectId, request);
+            return NoContent();
+        }
+
+        [HttpPost("by-login")]
+        public async Task<IActionResult> AddByLoginAsync(
+            [FromRoute] int projectId,
+            [FromBody] MemberAddByLoginRequest request,
+            [FromServices] IValidator<MemberAddByLoginRequest> validator)
+        {
+            var validationResult = await validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+            }
+
+            await _memberService.AddByLoginAsync(projectId, request);
             return NoContent();
         }
 

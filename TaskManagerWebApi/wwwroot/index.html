@@ -89,6 +89,12 @@
             margin-bottom: 5px;
         }
 
+        .project-form select {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 220px;
+        }
+
         .project-details {
             margin-top: 15px;
         }
@@ -171,9 +177,30 @@
         <div id="project-details" class="project-details"></div>
     </div>
 
+    <!-- Страница добавления участника -->
+    <div id="add-member-section" class="hidden">
+        <h2>Добавление участника</h2>
+
+        <form id="member-form" class="project-form" onsubmit="addMember(event)">
+            <input type="text" id="member-login" placeholder="Логин участника" required />
+            <label for="member-role">Роль участника</label>
+            <select id="member-role" required>
+                <option value="Developer">Developer</option>
+                <option value="Observer">Observer</option>
+                <option value="Owner">Owner</option>
+            </select>
+            <div>
+                <button type="submit">Добавить участника</button>
+                <button type="button" onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+            </div>
+            <p id="member-error" class="error"></p>
+        </form>
+    </div>
+
     <script>
         // Базовый URL твоего API (замени порт, если нужно)
         const API_URL = 'http://localhost:8080/api';
+        let currentProjectId = null;
 
         function toggleAuth(form) {
             const loginForm = document.getElementById('login-form');
@@ -280,6 +307,8 @@
             const token = localStorage.getItem('jwt_token');
             if (!token) return;
 
+            currentProjectId = projectId;
+
             const res = await fetch(`${API_URL}/projects/${projectId}`, {
                 method: 'GET',
                 headers: {
@@ -310,6 +339,13 @@
                     </li>
                 `).join('')
                 : '<li>У проекта пока нет задач</li>';
+            const currentUserLogin = getCurrentUserLogin();
+            const canAddMember = project.members?.some(member =>
+                member.login === currentUserLogin
+                && member.projetRole?.toUpperCase() === 'OWNER');
+            const addMemberButton = canAddMember
+                ? '<button onclick="showAddMemberSection()">Добавить участника</button>'
+                : '';
 
             document.getElementById('project-details-title').innerText = project.title;
             document.getElementById('project-details').innerHTML = `
@@ -323,11 +359,82 @@
                 <p><strong>Затрачено часов:</strong> ${project.hoursSpent}</p>
                 <h3>Участники</h3>
                 <ul class="project-details-list">${members}</ul>
+                ${addMemberButton}
                 <h3>Задачи</h3>
                 <ul class="project-details-list">${tasks}</ul>
             `;
 
             showProjectDetailsSection();
+        }
+
+        function getCurrentUserLogin() {
+            try {
+                const token = localStorage.getItem('jwt_token');
+                if (!token) return null;
+
+                const payload = token.split('.')[1]
+                    .replace(/-/g, '+')
+                    .replace(/_/g, '/');
+                const claims = JSON.parse(atob(payload));
+
+                return claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
+                    || claims.name
+                    || claims.unique_name
+                    || null;
+            } catch {
+                return null;
+            }
+        }
+
+        function showAddMemberSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.remove('hidden');
+            document.getElementById('member-error').innerText = '';
+        }
+
+        async function addMember(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId) return;
+
+            const errorElement = document.getElementById('member-error');
+            errorElement.innerText = '';
+
+            const member = {
+                memberLogin: document.getElementById('member-login').value,
+                role: document.getElementById('member-role').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/projects/${currentProjectId}/members/by-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(member)
+                });
+
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                if (!res.ok) {
+                    const error = await res.json().catch(() => null);
+                    errorElement.innerText = error?.[0]?.errorMessage || error?.message || 'Ошибка добавления участника';
+                    return;
+                }
+
+                document.getElementById('member-form').reset();
+                await loadProjectDetails(currentProjectId);
+            } catch {
+                errorElement.innerText = 'Не удалось подключиться к серверу';
+            }
         }
 
         function formatDate(value, isUtc = false) {
@@ -399,6 +506,7 @@
             document.getElementById('projects-section').classList.add('hidden');
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
@@ -406,6 +514,7 @@
             document.getElementById('projects-section').classList.remove('hidden');
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -414,6 +523,7 @@
             document.getElementById('projects-section').classList.add('hidden');
             document.getElementById('create-project-section').classList.remove('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -422,6 +532,7 @@
             document.getElementById('projects-section').classList.add('hidden');
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.remove('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
