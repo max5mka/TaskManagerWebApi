@@ -2,6 +2,7 @@
 {
     public interface IUserService
     {
-        Task EnsureUserExistsAsync(int userId, CancellationToken cancellationToken = default);
+        Task EnsureUserExistsByIdAsync(int userId, CancellationToken cancellationToken = default);
+        Task EnsureUserExistsByLoginAsync(string login, CancellationToken cancellationToken = default);
     }
 }

@@ -7,7 +7,8 @@ namespace TaskManagerWebApi.Models.Services.Interfaces
     public interface IMemberService
     {
         Task<IEnumerable<MemberResponse>> GetAllAsync(int projectId, UserFilter filter, CancellationToken cancellationToken = default);
-        Task AddAsync(int projectId, MemberAddRequest request, CancellationToken cancellationToken = default);
+        Task AddByIdAsync(int projectId, MemberAddRequest request, CancellationToken cancellationToken = default);
+        Task AddByLoginAsync(int projectId, MemberAddByLoginRequest request, CancellationToken cancellationToken = default);
         Task DeleteAsync(int projectId, int memberId, CancellationToken cancellationToken = default);
     }
 }
