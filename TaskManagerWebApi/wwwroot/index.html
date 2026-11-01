@@ -25,6 +25,11 @@
             padding: 30px 10px 10px;
             margin-bottom: 10px;
             border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            background-color: #f7f7f7;
         }
 
         .project-meta {
@@ -82,6 +87,14 @@
         .project-form label {
             display: block;
             margin-bottom: 5px;
+        }
+
+        .project-details {
+            margin-top: 15px;
+        }
+
+        .project-details-list {
+            padding-left: 20px;
         }
     </style>
 </head>
@@ -149,6 +162,13 @@
             </div>
             <p id="project-error" class="error"></p>
         </form>
+    </div>
+
+    <!-- Страница подробностей проекта -->
+    <div id="project-details-section" class="hidden">
+        <h2 id="project-details-title"></h2>
+        <button onclick="showProjectsSection()">Назад к проектам</button>
+        <div id="project-details" class="project-details"></div>
     </div>
 
     <script>
@@ -241,7 +261,7 @@
 
                 projects.forEach(p => {
                     listDiv.innerHTML += `
-                        <div class="card">
+                        <div class="card" onclick="loadProjectDetails(${p.id})" role="button" tabindex="0">
                             <div class="project-meta project-created">Создан: ${formatDate(p.createdAt, true)}</div>
                             <div class="project-meta project-author">Автор: ${p.creator?.login ?? '—'}</div>
                             <h3>${p.title}</h3>
@@ -254,6 +274,60 @@
             } else {
                 document.getElementById('projects-list').innerText = 'Ошибка загрузки проектов';
             }
+        }
+
+        async function loadProjectDetails(projectId) {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/projects/${projectId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                document.getElementById('projects-list').innerText = 'Ошибка загрузки проекта';
+                return;
+            }
+
+            const project = await res.json();
+            const members = project.members?.length
+                ? project.members.map(member =>
+                    `<li>${member.firstName} (${member.login}) — ${member.projetRole}</li>`).join('')
+                : '<li>У проекта пока нет участников</li>';
+            const tasks = project.tasks?.length
+                ? project.tasks.map(task => `
+                    <li>
+                        ${task.title} — ${task.status}, приоритет: ${task.priority},
+                        часов: ${task.hoursToDo}, выполнено: ${task.hoursLogged}
+                    </li>
+                `).join('')
+                : '<li>У проекта пока нет задач</li>';
+
+            document.getElementById('project-details-title').innerText = project.title;
+            document.getElementById('project-details').innerHTML = `
+                <p><strong>Описание:</strong> ${project.description}</p>
+                <p><strong>Статус:</strong> ${project.status}</p>
+                <p><strong>Создатель:</strong> ${project.creator?.login ?? '—'}</p>
+                <p><strong>Дата создания:</strong> ${formatDate(project.createdAt, true)}</p>
+                <p><strong>Дата начала:</strong> ${formatDate(project.start)}</p>
+                <p><strong>Дедлайн:</strong> ${formatDate(project.deadline)}</p>
+                <p><strong>Всего часов:</strong> ${project.totalHours}</p>
+                <p><strong>Затрачено часов:</strong> ${project.hoursSpent}</p>
+                <h3>Участники</h3>
+                <ul class="project-details-list">${members}</ul>
+                <h3>Задачи</h3>
+                <ul class="project-details-list">${tasks}</ul>
+            `;
+
+            showProjectDetailsSection();
         }
 
         function formatDate(value, isUtc = false) {
@@ -324,12 +398,14 @@
             document.getElementById('auth-section').classList.remove('hidden');
             document.getElementById('projects-section').classList.add('hidden');
             document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('projects-section').classList.remove('hidden');
             document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -337,7 +413,15 @@
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('projects-section').classList.add('hidden');
             document.getElementById('create-project-section').classList.remove('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
+        }
+
+        function showProjectDetailsSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.remove('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
