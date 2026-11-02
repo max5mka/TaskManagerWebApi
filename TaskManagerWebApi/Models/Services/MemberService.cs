@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Exceptions;
-using TaskManagerWebApi.Models.Constants;
 using TaskManagerWebApi.Models.Entities;
 using TaskManagerWebApi.Models.Filters;
 using TaskManagerWebApi.Models.Mappers;
@@ -14,13 +13,14 @@ namespace TaskManagerWebApi.Models.Services
     public class MemberService(
         ApplicationDbContext _context,
         IProjectService _projectService,
+        IProjectAccessService _projectAccessService,
         IUserService _userService,
         ICurrentUserService _currentUserService) : IMemberService
     {
         public async Task<IEnumerable<MemberResponse>> GetAllAsync(int projectId, UserFilter filter, CancellationToken cancellationToken = default)
         {
             await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
-            await EnsureUserIsMemberAsync(projectId, cancellationToken);
+            await _projectAccessService.EnsureUserIsMemberAsync(projectId, cancellationToken);
 
             var query = _context.UserProjects
                 .Include(x => x.User)
@@ -36,7 +36,7 @@ namespace TaskManagerWebApi.Models.Services
         public async Task AddByIdAsync(int projectId, MemberAddRequest request, CancellationToken cancellationToken = default)
         {
             await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
-            await EnsureUserIsOwnerAsync(projectId, cancellationToken);
+            await _projectAccessService.EnsureUserIsOwnerAsync(projectId, cancellationToken);
             await _userService.EnsureUserExistsByIdAsync(request.MemberId, cancellationToken);
 
             var existing = await _context.UserProjects.FirstOrDefaultAsync(x => x.UserId == request.MemberId && x.ProjectId == projectId);
@@ -57,7 +57,7 @@ namespace TaskManagerWebApi.Models.Services
         public async Task AddByLoginAsync(int projectId, MemberAddByLoginRequest request, CancellationToken cancellationToken = default)
         {
             await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
-            await EnsureUserIsOwnerAsync(projectId, cancellationToken);
+            await _projectAccessService.EnsureUserIsOwnerAsync(projectId, cancellationToken);
             await _userService.EnsureUserExistsByLoginAsync(request.MemberLogin, cancellationToken);
 
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Login == request.MemberLogin, cancellationToken);
@@ -80,7 +80,7 @@ namespace TaskManagerWebApi.Models.Services
         public async Task DeleteAsync(int projectId, int memberId, CancellationToken cancellationToken = default)
         {
             await _projectService.EnsureProjectExistsAsync(projectId, cancellationToken);
-            await EnsureUserIsOwnerAsync(projectId, cancellationToken);
+            await _projectAccessService.EnsureUserIsOwnerAsync(projectId, cancellationToken);
 
             var deleting = await _context.UserProjects.FirstOrDefaultAsync(x => x.UserId == memberId && x.ProjectId == projectId);
             if (deleting == null)
@@ -93,25 +93,5 @@ namespace TaskManagerWebApi.Models.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        private async Task EnsureUserIsOwnerAsync(int projectId, CancellationToken cancellationToken)
-        {
-            var userProject = await EnsureUserIsMemberAsync(projectId, cancellationToken);
-
-            if (userProject.ProjectRole != ProjectRoles.Owner)
-                throw new ForbiddenException("Only Owner can perform this action");
-        }
-
-        private async Task<UserProject> EnsureUserIsMemberAsync(int projectId, CancellationToken cancellationToken)
-        {
-            var userId = _currentUserService.UserId;
-
-            var userProject = await _context.UserProjects
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.ProjectId == projectId, cancellationToken);
-
-            if (userProject == null)
-                throw new ForbiddenException("You are not a member of this project");
-
-            return userProject;
-        }
     }
 }
