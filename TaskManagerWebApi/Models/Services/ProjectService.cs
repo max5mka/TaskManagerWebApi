@@ -14,6 +14,7 @@ namespace TaskManagerWebApi.Models.Services
     public class ProjectService(
         ApplicationDbContext _context,
         ICurrentUserService _currentUserService,
+        IProjectAccessService _projectAccessService,
         ILogger<ProjectService> _logger) : IProjectService
     {
         public async Task<IEnumerable<ProjectShortResponse>> GetAllAsync(ProjectFilter filter, CancellationToken cancellationToken = default)
@@ -65,6 +66,7 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task<ProjectLongResponse> UpdateAsync(int projectId, ProjectUpdateRequest request, CancellationToken cancellationToken = default)
         {
+            await _projectAccessService.EnsureUserIsOwnerAsync(projectId, cancellationToken);
             var userId = _currentUserService.UserId;
 
             try
@@ -107,6 +109,7 @@ namespace TaskManagerWebApi.Models.Services
 
         public async Task DeleteAsync(int projectId, CancellationToken cancellationToken = default)
         {
+            await _projectAccessService.EnsureUserIsOwnerAsync(projectId, cancellationToken);
             var userId = _currentUserService.UserId;
 
             try

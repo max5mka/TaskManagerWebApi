@@ -18,6 +18,7 @@ namespace TaskManagerWebApi
             serviceCollection.AddScoped<IJWTService, JWTService>();
             serviceCollection.AddScoped<IMemberService, MemberService>();
             serviceCollection.AddScoped<IAdminService, AdminService>();
+            serviceCollection.AddScoped<IProjectAccessService, ProjectAccessService>();
             serviceCollection.AddHttpContextAccessor();
             serviceCollection.AddScoped<ICurrentUserService, CurrentUserService>();
             return serviceCollection;
