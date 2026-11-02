@@ -103,6 +103,19 @@
             padding-left: 20px;
         }
 
+        .task-card {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .task-card:hover {
+            background-color: #f7f7f7;
+        }
+
         .project-navigation {
             display: flex;
             justify-content: space-between;
@@ -179,6 +192,13 @@
             </div>
             <p id="project-error" class="error"></p>
         </form>
+    </div>
+
+    <!-- Страница подробностей задачи -->
+    <div id="task-details-section" class="hidden">
+        <h2 id="task-details-title"></h2>
+        <button onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+        <div id="task-details" class="project-details"></div>
     </div>
 
     <!-- Страница подробностей проекта -->
@@ -404,9 +424,12 @@
                 : '<li>У проекта пока нет участников</li>';
             const tasks = project.tasks?.length
                 ? project.tasks.map(task => `
-                    <li>
-                        ${task.title} — ${task.status}, приоритет: ${task.priority},
-                        часов: ${task.hoursToDo}, выполнено: ${task.hoursLogged}
+                    <li class="task-card" onclick="loadTaskDetails(${task.id})" role="button" tabindex="0">
+                        <strong>${task.title}</strong>
+                        <div>Статус: ${task.status}</div>
+                        <div>Приоритет: ${task.priority}</div>
+                        <div>Часов: ${task.hoursToDo}, выполнено: ${task.hoursLogged}</div>
+                        <div>Дедлайн: ${formatDate(task.deadline)}</div>
                     </li>
                 `).join('')
                 : '<li>У проекта пока нет задач</li>';
@@ -439,6 +462,47 @@
             `;
 
             showProjectDetailsSection();
+        }
+
+        async function loadTaskDetails(taskId) {
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId) return;
+
+            const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                document.getElementById('task-details').innerText = 'Ошибка загрузки задачи';
+                return;
+            }
+
+            const task = await res.json();
+            document.getElementById('task-details-title').innerText = task.title;
+            document.getElementById('task-details').innerHTML = `
+                <p><strong>Описание:</strong> ${task.description}</p>
+                <p><strong>Статус:</strong> ${task.status}</p>
+                <p><strong>Приоритет:</strong> ${task.priority}</p>
+                <p><strong>Часов запланировано:</strong> ${task.hoursToDo}</p>
+                <p><strong>Часов выполнено:</strong> ${task.hoursLogged}</p>
+                <p><strong>Взята в работу:</strong> ${formatDate(task.takenAt)}</p>
+                <p><strong>Дедлайн:</strong> ${formatDate(task.deadline)}</p>
+                <p><strong>Дата создания:</strong> ${formatDate(task.createdAt, true)}</p>
+                <p><strong>Дата изменения:</strong> ${formatDate(task.updatedAt, true)}</p>
+                <p><strong>Заказчик:</strong> ${task.creator?.login ?? '—'}</p>
+                <p><strong>Исполнитель:</strong> ${task.assignee?.login ?? '—'}</p>
+                <p><strong>Проект:</strong> ${task.project?.title ?? '—'}</p>
+            `;
+
+            showTaskDetailsSection();
         }
 
         function getCurrentUserLogin() {
@@ -495,6 +559,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.remove('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
             document.getElementById('task-error').innerText = '';
         }
 
@@ -738,6 +803,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
@@ -748,6 +814,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -759,6 +826,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -770,6 +838,18 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
+        }
+
+        function showTaskDetailsSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.remove('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
