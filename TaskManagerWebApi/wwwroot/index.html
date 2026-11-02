@@ -239,6 +239,33 @@
         </form>
     </div>
 
+    <!-- Страница создания задачи -->
+    <div id="add-task-section" class="hidden">
+        <h2>Создание задачи</h2>
+
+        <form id="task-form" class="project-form" onsubmit="createTask(event)">
+            <input type="text" id="task-title" placeholder="Название задачи" maxlength="200" required />
+            <textarea id="task-description" placeholder="Описание задачи" maxlength="5000" required></textarea>
+            <label for="task-hours">Количество часов</label>
+            <input type="number" id="task-hours" min="0.01" max="100" step="0.01" required />
+            <label for="task-priority">Приоритет</label>
+            <select id="task-priority" required>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+                <option value="P3" selected>P3</option>
+                <option value="P4">P4</option>
+                <option value="P5">P5</option>
+            </select>
+            <label for="task-deadline">Дедлайн</label>
+            <input type="datetime-local" id="task-deadline" required />
+            <div>
+                <button type="submit">Создать задачу</button>
+                <button type="button" onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+            </div>
+            <p id="task-error" class="error"></p>
+        </form>
+    </div>
+
     <script>
         // Базовый URL твоего API (замени порт, если нужно)
         const API_URL = 'http://localhost:8080/api';
@@ -408,6 +435,7 @@
                 ${addMemberButton}
                 <h3>Задачи</h3>
                 <ul class="project-details-list">${tasks}</ul>
+                <button onclick="showAddTaskSection()">Добавить задачу</button>
             `;
 
             showProjectDetailsSection();
@@ -457,6 +485,62 @@
             document.getElementById('edit-project-start').value = toDateTimeLocal(currentProject.start);
             document.getElementById('edit-project-deadline').value = toDateTimeLocal(currentProject.deadline);
             document.getElementById('edit-project-error').innerText = '';
+        }
+
+        function showAddTaskSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.remove('hidden');
+            document.getElementById('task-error').innerText = '';
+        }
+
+        async function createTask(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId) return;
+
+            const errorElement = document.getElementById('task-error');
+            errorElement.innerText = '';
+
+            const task = {
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-description').value,
+                hoursToDo: Number(document.getElementById('task-hours').value),
+                priority: document.getElementById('task-priority').value,
+                deadline: document.getElementById('task-deadline').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(task)
+                });
+
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                if (!res.ok) {
+                    const error = await res.json().catch(() => null);
+                    errorElement.innerText = error?.[0]?.errorMessage || error?.message || 'Ошибка создания задачи';
+                    return;
+                }
+
+                document.getElementById('task-form').reset();
+                await loadProjectDetails(currentProjectId);
+            } catch {
+                errorElement.innerText = 'Не удалось подключиться к серверу';
+            }
         }
 
         async function updateProject(event) {
@@ -653,6 +737,7 @@
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
@@ -662,6 +747,7 @@
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -672,6 +758,7 @@
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -682,6 +769,7 @@
             document.getElementById('project-details-section').classList.remove('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
