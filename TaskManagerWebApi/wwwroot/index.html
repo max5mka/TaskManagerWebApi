@@ -102,6 +102,17 @@
         .project-details-list {
             padding-left: 20px;
         }
+
+        .project-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-navigation-left {
+            display: flex;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
@@ -173,8 +184,13 @@
     <!-- Страница подробностей проекта -->
     <div id="project-details-section" class="hidden">
         <h2 id="project-details-title"></h2>
-        <button onclick="showProjectsSection()">Назад к проектам</button>
-        <button id="edit-project-button" class="hidden" onclick="showEditProjectSection()">Редактировать</button>
+        <div class="project-navigation">
+            <div class="project-navigation-left">
+                <button onclick="showProjectsSection()">Назад к проектам</button>
+                <button id="edit-project-button" class="hidden" onclick="showEditProjectSection()">Редактировать</button>
+            </div>
+            <button id="delete-project-button" class="hidden" onclick="deleteProject()">Удалить проект</button>
+        </div>
         <div id="project-details" class="project-details"></div>
     </div>
 
@@ -372,6 +388,7 @@
                 member.login === currentUserLogin
                 && member.projetRole?.toUpperCase() === 'OWNER');
             document.getElementById('edit-project-button').classList.toggle('hidden', !canAddMember);
+            document.getElementById('delete-project-button').classList.toggle('hidden', !canAddMember);
             const addMemberButton = canAddMember
                 ? '<button onclick="showAddMemberSection()">Добавить участника</button>'
                 : '';
@@ -484,6 +501,35 @@
             } catch {
                 errorElement.innerText = 'Не удалось подключиться к серверу';
             }
+        }
+
+        async function deleteProject() {
+            if (!currentProjectId || !confirm('Удалить проект?')) return;
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/projects/${currentProjectId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                alert('Ошибка удаления проекта');
+                return;
+            }
+
+            currentProject = null;
+            currentProjectId = null;
+            showProjectsSection();
+            await loadProjects();
         }
 
         function toDateTimeLocal(value) {
