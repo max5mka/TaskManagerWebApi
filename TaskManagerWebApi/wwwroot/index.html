@@ -174,6 +174,7 @@
     <div id="project-details-section" class="hidden">
         <h2 id="project-details-title"></h2>
         <button onclick="showProjectsSection()">Назад к проектам</button>
+        <button id="edit-project-button" class="hidden" onclick="showEditProjectSection()">Редактировать</button>
         <div id="project-details" class="project-details"></div>
     </div>
 
@@ -197,10 +198,36 @@
         </form>
     </div>
 
+    <!-- Страница редактирования проекта -->
+    <div id="edit-project-section" class="hidden">
+        <h2>Редактирование проекта</h2>
+
+        <form id="edit-project-form" class="project-form" onsubmit="updateProject(event)">
+            <input type="text" id="edit-project-title" placeholder="Название проекта" maxlength="200" required />
+            <textarea id="edit-project-description" placeholder="Описание проекта" maxlength="5000" required></textarea>
+            <label for="edit-project-status">Статус</label>
+            <select id="edit-project-status" required>
+                <option value="New">New</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Closed">Closed</option>
+            </select>
+            <label for="edit-project-start">Начало проекта</label>
+            <input type="datetime-local" id="edit-project-start" required />
+            <label for="edit-project-deadline">Дедлайн</label>
+            <input type="datetime-local" id="edit-project-deadline" required />
+            <div>
+                <button type="submit">Сохранить</button>
+                <button type="button" onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+            </div>
+            <p id="edit-project-error" class="error"></p>
+        </form>
+    </div>
+
     <script>
         // Базовый URL твоего API (замени порт, если нужно)
         const API_URL = 'http://localhost:8080/api';
         let currentProjectId = null;
+        let currentProject = null;
 
         function toggleAuth(form) {
             const loginForm = document.getElementById('login-form');
@@ -327,6 +354,7 @@
             }
 
             const project = await res.json();
+            currentProject = project;
             const members = project.members?.length
                 ? project.members.map(member =>
                     `<li>${member.firstName} (${member.login}) — ${member.projetRole}</li>`).join('')
@@ -343,6 +371,7 @@
             const canAddMember = project.members?.some(member =>
                 member.login === currentUserLogin
                 && member.projetRole?.toUpperCase() === 'OWNER');
+            document.getElementById('edit-project-button').classList.toggle('hidden', !canAddMember);
             const addMemberButton = canAddMember
                 ? '<button onclick="showAddMemberSection()">Добавить участника</button>'
                 : '';
@@ -393,6 +422,76 @@
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.remove('hidden');
             document.getElementById('member-error').innerText = '';
+        }
+
+        function showEditProjectSection() {
+            if (!currentProject) return;
+
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.remove('hidden');
+
+            document.getElementById('edit-project-title').value = currentProject.title;
+            document.getElementById('edit-project-description').value = currentProject.description;
+            document.getElementById('edit-project-status').value = currentProject.status;
+            document.getElementById('edit-project-start').value = toDateTimeLocal(currentProject.start);
+            document.getElementById('edit-project-deadline').value = toDateTimeLocal(currentProject.deadline);
+            document.getElementById('edit-project-error').innerText = '';
+        }
+
+        async function updateProject(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId) return;
+
+            const errorElement = document.getElementById('edit-project-error');
+            errorElement.innerText = '';
+
+            const project = {
+                title: document.getElementById('edit-project-title').value,
+                description: document.getElementById('edit-project-description').value,
+                status: document.getElementById('edit-project-status').value,
+                start: document.getElementById('edit-project-start').value,
+                deadline: document.getElementById('edit-project-deadline').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/projects/${currentProjectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(project)
+                });
+
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                if (!res.ok) {
+                    const error = await res.json().catch(() => null);
+                    errorElement.innerText = error?.[0]?.errorMessage || error?.message || 'Ошибка изменения проекта';
+                    return;
+                }
+
+                await loadProjectDetails(currentProjectId);
+            } catch {
+                errorElement.innerText = 'Не удалось подключиться к серверу';
+            }
+        }
+
+        function toDateTimeLocal(value) {
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return value.replace(' ', 'T').slice(0, 16);
+
+            const pad = number => String(number).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
 
         async function addMember(event) {
@@ -507,6 +606,7 @@
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
@@ -515,6 +615,7 @@
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -524,6 +625,7 @@
             document.getElementById('create-project-section').classList.remove('hidden');
             document.getElementById('project-details-section').classList.add('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -533,6 +635,7 @@
             document.getElementById('create-project-section').classList.add('hidden');
             document.getElementById('project-details-section').classList.remove('hidden');
             document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
