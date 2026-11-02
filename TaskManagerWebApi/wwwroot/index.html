@@ -198,6 +198,7 @@
     <div id="task-details-section" class="hidden">
         <h2 id="task-details-title"></h2>
         <button onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+        <button onclick="showEditTaskSection()">Редактировать</button>
         <div id="task-details" class="project-details"></div>
     </div>
 
@@ -231,6 +232,45 @@
                 <button type="button" onclick="showProjectDetailsSection()">Вернуться к проекту</button>
             </div>
             <p id="member-error" class="error"></p>
+        </form>
+    </div>
+
+    <!-- Страница редактирования задачи -->
+    <div id="edit-task-section" class="hidden">
+        <h2>Редактирование задачи</h2>
+
+        <form id="edit-task-form" class="project-form" onsubmit="updateTask(event)">
+            <input type="text" id="edit-task-title" placeholder="Название задачи" maxlength="200" required />
+            <textarea id="edit-task-description" placeholder="Описание задачи" maxlength="5000" required></textarea>
+            <label for="edit-task-status">Статус</label>
+            <select id="edit-task-status" required>
+                <option value="New">New</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
+                <option value="Interrupted">Interrupted</option>
+                <option value="Closed">Closed</option>
+            </select>
+            <label for="edit-task-priority">Приоритет</label>
+            <select id="edit-task-priority" required>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+                <option value="P3">P3</option>
+                <option value="P4">P4</option>
+                <option value="P5">P5</option>
+            </select>
+            <label for="edit-task-hours">Запланировано часов</label>
+            <input type="number" id="edit-task-hours" min="0.01" max="100" step="0.01" required />
+            <label for="edit-task-hours-logged">Выполнено часов</label>
+            <input type="number" id="edit-task-hours-logged" min="0" step="0.01" required />
+            <label for="edit-task-assignee">ID исполнителя</label>
+            <input type="number" id="edit-task-assignee" min="1" placeholder="Не назначен" />
+            <label for="edit-task-deadline">Дедлайн</label>
+            <input type="datetime-local" id="edit-task-deadline" required />
+            <div>
+                <button type="submit">Сохранить</button>
+                <button type="button" onclick="showTaskDetailsSection()">Вернуться к задаче</button>
+            </div>
+            <p id="edit-task-error" class="error"></p>
         </form>
     </div>
 
@@ -291,6 +331,8 @@
         const API_URL = 'http://localhost:8080/api';
         let currentProjectId = null;
         let currentProject = null;
+        let currentTaskId = null;
+        let currentTask = null;
 
         function toggleAuth(form) {
             const loginForm = document.getElementById('login-form');
@@ -486,6 +528,8 @@
             }
 
             const task = await res.json();
+            currentTaskId = taskId;
+            currentTask = task;
             document.getElementById('task-details-title').innerText = task.title;
             document.getElementById('task-details').innerHTML = `
                 <p><strong>Описание:</strong> ${task.description}</p>
@@ -503,6 +547,78 @@
             `;
 
             showTaskDetailsSection();
+        }
+
+        function showEditTaskSection() {
+            if (!currentTask) return;
+
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.remove('hidden');
+
+            document.getElementById('edit-task-title').value = currentTask.title;
+            document.getElementById('edit-task-description').value = currentTask.description;
+            document.getElementById('edit-task-status').value = currentTask.status;
+            document.getElementById('edit-task-priority').value = currentTask.priority;
+            document.getElementById('edit-task-hours').value = currentTask.hoursToDo;
+            document.getElementById('edit-task-hours-logged').value = currentTask.hoursLogged;
+            document.getElementById('edit-task-assignee').value = currentTask.assignee?.id ?? '';
+            document.getElementById('edit-task-deadline').value = toDateTimeLocal(currentTask.deadline);
+            document.getElementById('edit-task-error').innerText = '';
+        }
+
+        async function updateTask(event) {
+            event.preventDefault();
+
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId || !currentTaskId) return;
+
+            const errorElement = document.getElementById('edit-task-error');
+            errorElement.innerText = '';
+
+            const assigneeValue = document.getElementById('edit-task-assignee').value;
+            const task = {
+                title: document.getElementById('edit-task-title').value,
+                description: document.getElementById('edit-task-description').value,
+                status: document.getElementById('edit-task-status').value,
+                priority: document.getElementById('edit-task-priority').value,
+                hoursToDo: Number(document.getElementById('edit-task-hours').value),
+                hoursLogged: Number(document.getElementById('edit-task-hours-logged').value),
+                assigneeId: assigneeValue ? Number(assigneeValue) : null,
+                deadline: document.getElementById('edit-task-deadline').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${currentTaskId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(task)
+                });
+
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                if (!res.ok) {
+                    const error = await res.json().catch(() => null);
+                    errorElement.innerText = error?.[0]?.errorMessage || error?.message || 'Ошибка изменения задачи';
+                    return;
+                }
+
+                await loadTaskDetails(currentTaskId);
+            } catch {
+                errorElement.innerText = 'Не удалось подключиться к серверу';
+            }
         }
 
         function getCurrentUserLogin() {
@@ -559,6 +675,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.remove('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
             document.getElementById('task-error').innerText = '';
         }
@@ -804,6 +921,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
         }
 
         function showProjectsSection() {
@@ -815,6 +933,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -827,6 +946,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
             document.getElementById('project-error').innerText = '';
         }
 
@@ -839,6 +959,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
         }
 
         function showTaskDetailsSection() {
@@ -849,6 +970,7 @@
             document.getElementById('add-member-section').classList.add('hidden');
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.remove('hidden');
         }
 
