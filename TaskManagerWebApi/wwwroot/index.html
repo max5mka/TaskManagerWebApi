@@ -234,12 +234,22 @@
         }
 
         .task-card {
+            position: relative;
             margin-bottom: 10px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             cursor: pointer;
             list-style: none;
+        }
+
+        .task-card-meta {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            color: #777;
+            font-size: 0.8em;
+            text-align: right;
         }
 
         .task-card:hover {
@@ -599,6 +609,7 @@
             const tasks = project.tasks?.length
                 ? project.tasks.map(task => `
                     <li class="task-card" onclick="loadTaskDetails(${task.id})" role="button" tabindex="0">
+                        <div class="task-card-meta">От ${task.creator?.login ?? '—'} · ${formatDate(task.createdAt, true)}</div>
                         <strong>${task.title}</strong>
                         <div>Статус: ${task.status}</div>
                         <div>Приоритет: ${task.priority}</div>

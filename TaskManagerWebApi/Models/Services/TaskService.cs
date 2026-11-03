@@ -123,6 +123,7 @@ namespace TaskManagerWebApi.Models.Services
             var found = await _context.Tasks
                 .Include(x => x.Creator)
                 .Include(x => x.Project)
+                    .ThenInclude(x => x.Creator)
                 .Include(x => x.Assignee)
                 .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.Id == taskId, cancellationToken);
 
