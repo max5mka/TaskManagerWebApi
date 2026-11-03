@@ -144,6 +144,22 @@
             margin-top: 0;
         }
 
+        .project-info-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .project-info-card-header h3,
+        .project-creator {
+            margin: 0;
+        }
+
+        .project-creator {
+            text-align: right;
+        }
+
         .project-info-card p {
             margin: 8px 0;
         }
@@ -605,10 +621,12 @@
             document.getElementById('project-details').innerHTML = `
                 <div class="project-info-grid project-content-card">
                     <div class="project-info-card">
-                        <h3>О проекте</h3>
+                        <div class="project-info-card-header">
+                            <h3>О проекте</h3>
+                            <p class="project-creator"><strong>Создатель:</strong> ${project.creator?.login ?? '—'}</p>
+                        </div>
                         <p><strong>Описание:</strong> ${project.description}</p>
                         <p><strong>Статус:</strong> ${project.status}</p>
-                        <p><strong>Создатель:</strong> ${project.creator?.login ?? '—'}</p>
                     </div>
                     <div class="project-info-card">
                         <h3>Сроки</h3>
@@ -629,8 +647,8 @@
                 <div class="project-content-grid">
                     <div class="project-section project-content-card">
                         <div class="project-section-header">
-                            <h3>Задачи</h3>
-                            <button onclick="showAddTaskSection()">Добавить задачу</button>
+                            <h3>Последние задачи</h3>
+                            <button onclick="showAddTaskSection()">Создать задачу</button>
                         </div>
                         <ul class="project-details-list">${tasks}</ul>
                     </div>
