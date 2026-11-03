@@ -6,9 +6,9 @@
     <style>
         body {
             font-family: sans-serif;
-            max-width: 800px;
+            max-width: 1400px;
             margin: 20px auto;
-            padding: 0 20px;
+            padding: 0 32px;
         }
 
         .hidden {
@@ -17,6 +17,11 @@
 
         .error {
             color: red;
+        }
+
+        #auth-section {
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .card {
@@ -97,6 +102,115 @@
 
         .project-details {
             margin-top: 15px;
+        }
+
+        .project-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .project-header-left,
+        .project-header-actions,
+        .project-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .project-header h2 {
+            margin: 0;
+        }
+
+        .project-info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .project-info-card {
+            padding: 0 0 16px;
+        }
+
+        .project-info-card:not(:last-child) {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .project-info-card h3 {
+            margin-top: 0;
+        }
+
+        .project-info-card p {
+            margin: 8px 0;
+        }
+
+        .project-info-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .project-info-value {
+            display: block;
+            margin-top: 4px;
+            color: #333;
+        }
+
+        .project-section {
+            margin-top: 24px;
+        }
+
+        .project-content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .project-content-grid .project-section {
+            margin-top: 0;
+        }
+
+        .project-content-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fafafa;
+        }
+
+        .project-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .project-section-header h3 {
+            margin: 0;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 0 16px;
+            }
+
+            .project-header,
+            .project-info-grid,
+            .project-info-row,
+            .project-content-grid {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .project-header-actions {
+                justify-content: flex-start;
+            }
         }
 
         .project-details-list {
@@ -204,13 +318,15 @@
 
     <!-- Страница подробностей проекта -->
     <div id="project-details-section" class="hidden">
-        <h2 id="project-details-title"></h2>
-        <div class="project-navigation">
-            <div class="project-navigation-left">
+        <div class="project-header">
+            <div class="project-header-left">
                 <button onclick="showProjectsSection()">Назад к проектам</button>
-                <button id="edit-project-button" class="hidden" onclick="showEditProjectSection()">Редактировать</button>
+                <h2 id="project-details-title"></h2>
             </div>
-            <button id="delete-project-button" class="hidden" onclick="deleteProject()">Удалить проект</button>
+            <div class="project-header-actions">
+                <button id="edit-project-button" class="hidden" onclick="showEditProjectSection()">Редактировать</button>
+                <button id="delete-project-button" class="hidden" onclick="deleteProject()">Удалить проект</button>
+            </div>
         </div>
         <div id="project-details" class="project-details"></div>
     </div>
@@ -487,20 +603,45 @@
 
             document.getElementById('project-details-title').innerText = project.title;
             document.getElementById('project-details').innerHTML = `
-                <p><strong>Описание:</strong> ${project.description}</p>
-                <p><strong>Статус:</strong> ${project.status}</p>
-                <p><strong>Создатель:</strong> ${project.creator?.login ?? '—'}</p>
-                <p><strong>Дата создания:</strong> ${formatDate(project.createdAt, true)}</p>
-                <p><strong>Дата начала:</strong> ${formatDate(project.start)}</p>
-                <p><strong>Дедлайн:</strong> ${formatDate(project.deadline)}</p>
-                <p><strong>Всего часов:</strong> ${project.totalHours}</p>
-                <p><strong>Затрачено часов:</strong> ${project.hoursSpent}</p>
-                <h3>Участники</h3>
-                <ul class="project-details-list">${members}</ul>
-                ${addMemberButton}
-                <h3>Задачи</h3>
-                <ul class="project-details-list">${tasks}</ul>
-                <button onclick="showAddTaskSection()">Добавить задачу</button>
+                <div class="project-info-grid project-content-card">
+                    <div class="project-info-card">
+                        <h3>О проекте</h3>
+                        <p><strong>Описание:</strong> ${project.description}</p>
+                        <p><strong>Статус:</strong> ${project.status}</p>
+                        <p><strong>Создатель:</strong> ${project.creator?.login ?? '—'}</p>
+                    </div>
+                    <div class="project-info-card">
+                        <h3>Сроки</h3>
+                        <div class="project-info-row">
+                            <p><strong>Создан</strong><span class="project-info-value">${formatDate(project.createdAt, true)}</span></p>
+                            <p><strong>Начало</strong><span class="project-info-value">${formatDate(project.start)}</span></p>
+                            <p><strong>Дедлайн</strong><span class="project-info-value">${formatDate(project.deadline)}</span></p>
+                        </div>
+                    </div>
+                    <div class="project-info-card">
+                        <h3>Затраты времени</h3>
+                        <div class="project-info-row">
+                            <p><strong>Всего часов</strong><span class="project-info-value">${project.totalHours}</span></p>
+                            <p><strong>Затрачено часов</strong><span class="project-info-value">${project.hoursSpent}</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-content-grid">
+                    <div class="project-section project-content-card">
+                        <div class="project-section-header">
+                            <h3>Задачи</h3>
+                            <button onclick="showAddTaskSection()">Добавить задачу</button>
+                        </div>
+                        <ul class="project-details-list">${tasks}</ul>
+                    </div>
+                    <div class="project-section project-content-card">
+                        <div class="project-section-header">
+                            <h3>Участники</h3>
+                            ${addMemberButton}
+                        </div>
+                        <ul class="project-details-list">${members}</ul>
+                    </div>
+                </div>
             `;
 
             showProjectDetailsSection();
