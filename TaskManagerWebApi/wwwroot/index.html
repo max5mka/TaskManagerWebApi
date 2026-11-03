@@ -210,6 +210,18 @@
             margin: 0;
         }
 
+        .tasks-list {
+            padding-left: 0;
+        }
+
+        .tasks-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
         @media (max-width: 700px) {
             body {
                 padding: 0 16px;
@@ -340,6 +352,26 @@
         <button onclick="showProjectDetailsSection()">Вернуться к проекту</button>
         <button onclick="showEditTaskSection()">Редактировать</button>
         <div id="task-details" class="project-details"></div>
+    </div>
+
+    <!-- Страница всех задач проекта -->
+    <div id="all-tasks-section" class="hidden">
+        <div class="project-header">
+            <div class="project-header-left">
+                <button onclick="showProjectDetailsSection()">Вернуться к проекту</button>
+                <h2>Все задачи</h2>
+            </div>
+            <div class="project-header-actions">
+                <button onclick="showAddTaskSection()">Создать задачу</button>
+            </div>
+        </div>
+        <p id="all-tasks-error" class="error"></p>
+        <ul id="all-tasks-list" class="project-details-list tasks-list"></ul>
+        <div class="tasks-pagination">
+            <button id="previous-tasks-page-button" onclick="loadAllTasks(allTasksPage - 1)">Назад</button>
+            <span id="tasks-page-number">Страница 1</span>
+            <button id="next-tasks-page-button" onclick="loadAllTasks(allTasksPage + 1)">Вперёд</button>
+        </div>
     </div>
 
     <!-- Страница подробностей проекта -->
@@ -475,6 +507,7 @@
         let currentProject = null;
         let currentTaskId = null;
         let currentTask = null;
+        let allTasksPage = 1;
 
         function toggleAuth(form) {
             const loginForm = document.getElementById('login-form');
@@ -659,7 +692,7 @@
                     <div class="project-section project-content-card">
                         <div class="project-section-header">
                             <h3>Последние задачи</h3>
-                            <button onclick="showAddTaskSection()">Создать задачу</button>
+                            <button onclick="loadAllTasks()">Все задачи</button>
                         </div>
                         <ul class="project-details-list">${tasks}</ul>
                     </div>
@@ -717,6 +750,55 @@
             `;
 
             showTaskDetailsSection();
+        }
+
+        async function loadAllTasks(page = 1) {
+            const token = localStorage.getItem('jwt_token');
+            if (!token || !currentProjectId) return;
+
+            if (page < 1) return;
+
+            const errorElement = document.getElementById('all-tasks-error');
+            errorElement.innerText = '';
+
+            const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks?page=${page}&pageSize=10`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            if (!res.ok) {
+                errorElement.innerText = 'Ошибка загрузки задач';
+                showAllTasksSection();
+                return;
+            }
+
+            const tasks = await res.json();
+            allTasksPage = page;
+            document.getElementById('all-tasks-list').innerHTML = tasks.length
+                ? tasks.map(task => `
+                    <li class="task-card" onclick="loadTaskDetails(${task.id})" role="button" tabindex="0">
+                        <div class="task-card-meta">От ${task.creator?.login ?? '—'} · ${formatDate(task.createdAt, true)}</div>
+                        <strong>${task.title}</strong>
+                        <div>Статус: ${task.status}</div>
+                        <div>Приоритет: ${task.priority}</div>
+                        <div>Часов: ${task.hoursToDo}, выполнено: ${task.hoursLogged}</div>
+                        <div>Дедлайн: ${formatDate(task.deadline)}</div>
+                    </li>
+                `).join('')
+                : '<li>В проекте пока нет задач</li>';
+
+            document.getElementById('tasks-page-number').innerText = `Страница ${allTasksPage}`;
+            document.getElementById('previous-tasks-page-button').disabled = allTasksPage === 1;
+            document.getElementById('next-tasks-page-button').disabled = tasks.length < 10;
+
+            showAllTasksSection();
         }
 
         function showEditTaskSection() {
@@ -847,6 +929,7 @@
             document.getElementById('add-task-section').classList.remove('hidden');
             document.getElementById('edit-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('all-tasks-section').classList.add('hidden');
             document.getElementById('task-error').innerText = '';
         }
 
@@ -1091,6 +1174,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('all-tasks-section').classList.add('hidden');
             document.getElementById('edit-task-section').classList.add('hidden');
         }
 
@@ -1129,6 +1213,7 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('all-tasks-section').classList.add('hidden');
             document.getElementById('edit-task-section').classList.add('hidden');
         }
 
@@ -1141,7 +1226,21 @@
             document.getElementById('edit-project-section').classList.add('hidden');
             document.getElementById('add-task-section').classList.add('hidden');
             document.getElementById('edit-task-section').classList.add('hidden');
+            document.getElementById('all-tasks-section').classList.add('hidden');
             document.getElementById('task-details-section').classList.remove('hidden');
+        }
+
+        function showAllTasksSection() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('projects-section').classList.add('hidden');
+            document.getElementById('create-project-section').classList.add('hidden');
+            document.getElementById('project-details-section').classList.add('hidden');
+            document.getElementById('add-member-section').classList.add('hidden');
+            document.getElementById('edit-project-section').classList.add('hidden');
+            document.getElementById('add-task-section').classList.add('hidden');
+            document.getElementById('task-details-section').classList.add('hidden');
+            document.getElementById('edit-task-section').classList.add('hidden');
+            document.getElementById('all-tasks-section').classList.remove('hidden');
         }
 
         // Проверяем, есть ли уже токен при загрузке страницы
