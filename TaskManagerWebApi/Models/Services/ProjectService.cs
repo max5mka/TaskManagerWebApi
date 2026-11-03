@@ -139,7 +139,10 @@ namespace TaskManagerWebApi.Models.Services
 
             var userId = _currentUserService.UserId;
             return await _context.Projects
-                .Include(p => p.Tasks)  
+                .Include(p => p.Tasks
+                    .OrderByDescending(task => task.CreatedAt)
+                    .ThenByDescending(task => task.Id)
+                    .Take(5))
                 .Include(p => p.UserProjects)
                     .ThenInclude(up => up.User)
                 .SingleAsync(p => p.Id == projectId && p.UserProjects.Any(up => up.UserId == userId));
