@@ -2,7 +2,7 @@
 Demo project for skills demonstration
 
 **About project:**
-REST API for project and task management, built with ASP.NET Core.
+REST API for project and task management, built with ASP.NET Core
 
 **RUN GUIDE:**
 
@@ -17,10 +17,10 @@ Default pre configured user: admin Admin123!
 ## Techhnology stack
 
 *   **Framework:** .NET 9 (ASP.NET Core Web API)
-*   **DB:** MS SQL Server, Entity Framework Core (Code First)
+*   **DB:** MS SQL Server, Entity Framework Core
 *   **Authentication:** JWT (JSON Web Tokens), roles (Admin, Owner, Developer, Observer)
-*   **Testing:** xUnit, Moq, Testcontainers (integration tests with a real database in Docker)
+*   **Testing:** xUnit, Moq, Testcontainers
 *   **Containers:** Docker, Docker Compose
 *   **CI/CD:** GitHub Actions (automated build, tests, and Docker image build)
 *   **Documentation:** Swagger / OpenAPI
-*   **Logging:** Serilog (output to console and database)
+*   **Logging:** Serilog
