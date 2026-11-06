@@ -9,6 +9,7 @@ namespace TaskManagerWebApi.Data
         public DbSet<ProjectEntity> Projects { get; set; }
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<UserProject> UserProjects { get; set; }
+        public DbSet<RefreshTokenEntity> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

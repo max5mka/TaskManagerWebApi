@@ -507,6 +507,40 @@
         let currentProject = null;
         let currentTaskId = null;
         let currentTask = null;
+
+        async function apiFetch(url, options = {}, retry = true) {
+            const token = localStorage.getItem('jwt_token');
+            const headers = new Headers(options.headers || {});
+
+            if (token) {
+                headers.set('Authorization', `Bearer ${token}`);
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                credentials: 'include'
+            });
+
+            if (response.status !== 401 || !retry) {
+                return response;
+            }
+
+            const refreshResponse = await fetch(`${API_URL}/refresh`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (!refreshResponse.ok) {
+                logout();
+                return response;
+            }
+
+            const newToken = await refreshResponse.text();
+            localStorage.setItem('jwt_token', newToken);
+
+            return apiFetch(url, options, false);
+        }
         let allTasksPage = 1;
 
         function toggleAuth(form) {
@@ -553,6 +587,7 @@
             const res = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ login: login, password: password })
             });
         
@@ -571,7 +606,7 @@
             const token = localStorage.getItem('jwt_token');
             if (!token) return;
 
-            const res = await fetch(`${API_URL}/projects`, {
+            const res = await apiFetch(`${API_URL}/projects`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -616,7 +651,7 @@
 
             currentProjectId = projectId;
 
-            const res = await fetch(`${API_URL}/projects/${projectId}`, {
+            const res = await apiFetch(`${API_URL}/projects/${projectId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -713,7 +748,7 @@
             const token = localStorage.getItem('jwt_token');
             if (!token || !currentProjectId) return;
 
-            const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
+            const res = await apiFetch(`${API_URL}/projects/${currentProjectId}/tasks/${taskId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -761,7 +796,7 @@
             const errorElement = document.getElementById('all-tasks-error');
             errorElement.innerText = '';
 
-            const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks?page=${page}&pageSize=10`, {
+            const res = await apiFetch(`${API_URL}/projects/${currentProjectId}/tasks?page=${page}&pageSize=10`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -847,7 +882,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks/${currentTaskId}`, {
+                const res = await apiFetch(`${API_URL}/projects/${currentProjectId}/tasks/${currentTaskId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -951,7 +986,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/projects/${currentProjectId}/tasks`, {
+                const res = await apiFetch(`${API_URL}/projects/${currentProjectId}/tasks`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -996,7 +1031,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/projects/${currentProjectId}`, {
+                const res = await apiFetch(`${API_URL}/projects/${currentProjectId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1028,7 +1063,7 @@
             const token = localStorage.getItem('jwt_token');
             if (!token) return;
 
-            const res = await fetch(`${API_URL}/projects/${currentProjectId}`, {
+                const res = await apiFetch(`${API_URL}/projects/${currentProjectId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1074,7 +1109,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/projects/${currentProjectId}/members/by-login`, {
+                const res = await apiFetch(`${API_URL}/projects/${currentProjectId}/members/by-login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1135,7 +1170,7 @@
             errorElement.innerText = '';
 
             try {
-                const res = await fetch(`${API_URL}/projects`, {
+                const res = await apiFetch(`${API_URL}/projects`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1164,7 +1199,12 @@
         }
 
         // 4. Выход
-        function logout() {
+        async function logout() {
+            await fetch(`${API_URL}/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(() => { });
+
             localStorage.removeItem('jwt_token');
             document.getElementById('auth-section').classList.remove('hidden');
             document.getElementById('projects-section').classList.add('hidden');
