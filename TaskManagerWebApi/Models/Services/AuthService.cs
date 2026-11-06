@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Authentication;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 using TaskManagerWebApi.Data;
 using TaskManagerWebApi.Exceptions;
 using TaskManagerWebApi.Models.Entities;
@@ -11,7 +13,8 @@ namespace TaskManagerWebApi.Models.Services
 {
     public class AuthService(
         ApplicationDbContext _context,
-        IJWTService _jwtService) : IAuthService
+        IJWTService _jwtService,
+        IOptions<AuthSettings> _authOptions) : IAuthService
     { 
         public async Task RegisterAsync(UserRegisterRequest request, CancellationToken cancellationToken = default)
         {
@@ -31,7 +34,7 @@ namespace TaskManagerWebApi.Models.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<string> LoginAsync(UserAuthorizeRequest request, CancellationToken cancellationToken = default)
+        public async Task<(string AccessToken, string RefreshToken)> LoginAsync(UserAuthorizeRequest request, CancellationToken cancellationToken = default)
         {
             var found = await _context.Users
                 .FirstOrDefaultAsync(x => x.Login == request.Login, cancellationToken);
@@ -44,12 +47,69 @@ namespace TaskManagerWebApi.Models.Services
 
             if (result == PasswordVerificationResult.Success)
             {
-                return _jwtService.GenerateToken(found);
+                var refreshToken = await CreateRefreshTokenAsync(found.Id, cancellationToken);
+                return (_jwtService.GenerateToken(found), refreshToken);
             }
             else
             {
                 throw new UnauthorizedException("Invalid login or password");
             }
         }
+
+        public async Task<(string AccessToken, string RefreshToken)> RefreshAsync(
+            string refreshToken,
+            CancellationToken cancellationToken = default)
+        {
+            var tokenHash = HashRefreshToken(refreshToken);
+            var storedToken = await _context.RefreshTokens
+                .Include(x => x.User)
+                .SingleOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+
+            if (storedToken == null
+                || storedToken.RevokedAt.HasValue
+                || storedToken.ExpiresAt <= DateTime.UtcNow)
+            {
+                throw new UnauthorizedException("Invalid or expired refresh token");
+            }
+
+            storedToken.RevokedAt = DateTime.UtcNow;
+            var newRefreshToken = await CreateRefreshTokenAsync(storedToken.UserId, cancellationToken);
+
+            return (_jwtService.GenerateToken(storedToken.User), newRefreshToken);
+        }
+
+        public async Task RevokeRefreshTokenAsync(
+            string refreshToken,
+            CancellationToken cancellationToken = default)
+        {
+            var tokenHash = HashRefreshToken(refreshToken);
+            var storedToken = await _context.RefreshTokens
+                .SingleOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+
+            if (storedToken != null && !storedToken.RevokedAt.HasValue)
+            {
+                storedToken.RevokedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        private async Task<string> CreateRefreshTokenAsync(
+            int userId,
+            CancellationToken cancellationToken)
+        {
+            var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            _context.RefreshTokens.Add(new RefreshTokenEntity
+            {
+                TokenHash = HashRefreshToken(refreshToken),
+                ExpiresAt = DateTime.UtcNow.Add(_authOptions.Value.RefreshTokenExpires),
+                UserId = userId
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return refreshToken;
+        }
+
+        private static string HashRefreshToken(string refreshToken) =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
     }
 }
