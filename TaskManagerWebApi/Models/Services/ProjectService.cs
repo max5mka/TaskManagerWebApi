@@ -31,6 +31,11 @@ namespace TaskManagerWebApi.Models.Services
                 .Take(filter.PageSize);
 
             var entities = await query.ToListAsync(cancellationToken);
+            _logger.LogInformation(
+                "Projects retrieved: {ProjectCount}, user: {UserId}",
+                entities.Count,
+                userId);
+
             return ProjectMapper.ToShortResponses(entities);
         }
 
@@ -38,6 +43,12 @@ namespace TaskManagerWebApi.Models.Services
         public async Task<ProjectLongResponse> GetByIdAsync(int projectId, CancellationToken cancellationToken = default)
         {
             var found = await GetProjectWithDetailsAsync(projectId, cancellationToken);
+
+            _logger.LogInformation(
+                "Project details retrieved: {ProjectId}, user: {UserId}",
+                projectId,
+                _currentUserService.UserId);
+
             return ProjectMapper.ToLongResponse(found);
         }
 
